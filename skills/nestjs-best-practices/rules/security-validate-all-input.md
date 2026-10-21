@@ -149,6 +149,6 @@ export class UsersController {
 
 Prefer schemas over classes? `StandardSchemaValidationPipe` from `@nestjs/common` validates Zod, Valibot or ArkType schemas, and the handler type is inferred from the schema. It can run next to `ValidationPipe`, so you can move one route at a time.
 
-Also cap the request body size (Express default is 100kb; set it on purpose with `app.useBodyParser('json', { limit: '100kb' })`), so a huge payload cannot tie up the event loop.
+Also cap the request body size (Express default is 100kb; set it on purpose with `app.useBodyParser('json', { limit: '100kb' })` on a `NestExpressApplication`), so a huge payload cannot tie up the event loop.
 
 Reference: [NestJS Validation](https://docs.nestjs.com/application/validation)

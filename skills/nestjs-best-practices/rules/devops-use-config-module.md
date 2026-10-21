@@ -81,9 +81,13 @@ export const validationSchema = Joi.object({
       isGlobal: true, // Available everywhere without importing
       load: [databaseConfig, appConfig],
       validationSchema,
+      // @nestjs/config validates through Standard Schema: Joi needs v18+,
+      // and Joi's own settings go under libraryOptions.
+      // (Defaults for Joi are allowUnknown: true, abortEarly: false. For new projects the docs suggest Zod.)
       validationOptions: {
-        abortEarly: true, // Stop on first error
-        allowUnknown: true, // Allow other env vars
+        libraryOptions: {
+          abortEarly: false, // Report every bad variable at once
+        },
       },
     }),
     TypeOrmModule.forRootAsync({

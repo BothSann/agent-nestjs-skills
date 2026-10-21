@@ -162,20 +162,21 @@ export class UsersController {
   @Get()
   @SerializeOptions({ groups: ['public'] })
   async findAllPublic(): Promise<UserDto[]> {
-    // Returns: { id, name }
+    // Return class instances so ClassSerializerInterceptor applies the groups
+    return plainToInstance(UserDto, await this.usersService.findAll()); // { id, name }
   }
 
   @Get('admin')
   @UseGuards(AdminGuard)
   @SerializeOptions({ groups: ['admin'] })
   async findAllAdmin(): Promise<UserDto[]> {
-    // Returns: { id, name, email, createdAt }
+    return plainToInstance(UserDto, await this.usersService.findAll()); // { id, name, email, createdAt }
   }
 
   @Get('me')
   @SerializeOptions({ groups: ['owner'] })
   async getProfile(@CurrentUser() user: User): Promise<UserDto> {
-    // Returns: { id, name, settings }
+    return plainToInstance(UserDto, user); // { id, name, settings }
   }
 }
 ```
