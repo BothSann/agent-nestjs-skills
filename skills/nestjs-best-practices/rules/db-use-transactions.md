@@ -55,11 +55,12 @@ export class OrdersService {
         );
       }
 
-      // If this throws, everything rolls back
-      await this.paymentService.chargeWithManager(manager, order.id);
-
+      // A thrown error anywhere above rolls back every write
       return order;
     });
+    // Keep calls to other systems (payment, email, HTTP) OUT of the transaction:
+    // they cannot be rolled back, and they hold the DB connection and locks while they wait.
+    // Charge after commit, or write an outbox row inside the transaction (see ddd-transactional-outbox).
   }
 }
 

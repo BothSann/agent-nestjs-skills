@@ -65,74 +65,60 @@ export class UserNotFoundException extends NotFoundException {
   }
 }
 
-// Custom exception filter for domain errors
-@Catch(DomainException)
-export class DomainExceptionFilter implements ExceptionFilter {
-  catch(exception: DomainException, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
-
-    const status = exception.getStatus?.() || 400;
-
-    response.status(status).json({
-      statusCode: status,
-      code: exception.code,
-      message: exception.message,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-    });
-  }
+// Domain errors know nothing about HTTP; the filter maps them to a status
+export abstract class DomainException extends Error {
+  abstract readonly code: string;
+}
+export class OrderAlreadyPlacedError extends DomainException {
+  readonly code = 'ORDER_ALREADY_PLACED';
 }
 
-// Global exception filter for unhandled errors
+const DOMAIN_STATUS: Record<string, number> = {
+  ORDER_ALREADY_PLACED: HttpStatus.CONFLICT,
+};
+
+// One global catch-all filter. It uses HttpAdapterHost, so it works on Express and Fastify.
+// Handling domain errors here too avoids relying on the order of several global filters.
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
-  constructor(private readonly logger: Logger) {}
+  private readonly logger = new Logger(AllExceptionsFilter.name);
 
-  catch(exception: unknown, host: ArgumentsHost) {
+  constructor(private readonly httpAdapterHost: HttpAdapterHost) {}
+
+  catch(exception: unknown, host: ArgumentsHost): void {
+    const { httpAdapter } = this.httpAdapterHost;
     const ctx = host.switchToHttp();
-    const response = ctx.getResponse<Response>();
-    const request = ctx.getRequest<Request>();
+    const path = httpAdapter.getRequestUrl(ctx.getRequest());
 
-    const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+    let status = HttpStatus.INTERNAL_SERVER_ERROR;
+    let body: Record<string, unknown> = { message: 'Internal server error' };
 
-    const message =
-      exception instanceof HttpException
-        ? exception.message
-        : 'Internal server error';
+    if (exception instanceof HttpException) {
+      status = exception.getStatus();
+      const res = exception.getResponse();
+      // Keep the full body, e.g. the array of ValidationPipe messages
+      body = typeof res === 'string' ? { message: res } : (res as Record<string, unknown>);
+    } else if (exception instanceof DomainException) {
+      status = DOMAIN_STATUS[exception.code] ?? HttpStatus.BAD_REQUEST;
+      body = { code: exception.code, message: exception.message };
+    }
 
-    this.logger.error(
-      `${request.method} ${request.url}`,
-      exception instanceof Error ? exception.stack : exception,
+    // Log only real server errors with the stack; never send the stack to the client
+    if (status >= 500) {
+      this.logger.error(`Unhandled error on ${path}`, exception instanceof Error ? exception.stack : String(exception));
+    }
+
+    httpAdapter.reply(
+      ctx.getResponse(),
+      { statusCode: status, ...body, timestamp: new Date().toISOString(), path },
+      status,
     );
-
-    response.status(status).json({
-      statusCode: status,
-      message,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-    });
   }
 }
 
-// Register globally in main.ts
-app.useGlobalFilters(
-  new AllExceptionsFilter(app.get(Logger)),
-  new DomainExceptionFilter(),
-);
-
-// Or via module
+// Register globally through DI, so the filter can inject HttpAdapterHost
 @Module({
-  providers: [
-    {
-      provide: APP_FILTER,
-      useClass: AllExceptionsFilter,
-    },
-  ],
+  providers: [{ provide: APP_FILTER, useClass: AllExceptionsFilter }],
 })
 export class AppModule {}
 ```

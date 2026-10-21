@@ -36,7 +36,7 @@ export class UsersV2Controller {}
 **Correct (use NestJS built-in versioning):**
 
 ```typescript
-// Enable versioning in main.ts
+// main.ts: pick ONE versioning type. Calling enableVersioning() again replaces the first.
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
@@ -46,46 +46,34 @@ async function bootstrap() {
     defaultVersion: '1',
   });
 
-  // Or header versioning: X-API-Version: 1
-  app.enableVersioning({
-    type: VersioningType.HEADER,
-    header: 'X-API-Version',
-    defaultVersion: '1',
-  });
-
-  // Or media type: Accept: application/json;v=1
-  app.enableVersioning({
-    type: VersioningType.MEDIA_TYPE,
-    key: 'v=',
-    defaultVersion: '1',
-  });
+  // Other choices (use instead of URI, not as well):
+  //   { type: VersioningType.HEADER, header: 'X-API-Version' }
+  //   { type: VersioningType.MEDIA_TYPE, key: 'v=' }   // Accept: application/json;v=1
 
   await app.listen(3000);
 }
 
-// Version-specific controllers
-@Controller('users')
-@Version('1')
+// Version a whole controller: put the version in @Controller().
+// @Version() is for single route handlers.
+@Controller({ path: 'users', version: '1' })
 export class UsersV1Controller {
+  constructor(private readonly usersService: UsersService) {}
+
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<UserV1Response> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<UserV1Response> {
     const user = await this.usersService.findOne(id);
-    // V1 response format
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    };
+    return { id: user.id, name: `${user.firstName} ${user.lastName}`, email: user.email };
   }
 }
 
-@Controller('users')
-@Version('2')
+@Controller({ path: 'users', version: '2' })
 export class UsersV2Controller {
+  constructor(private readonly usersService: UsersService) {}
+
   @Get(':id')
-  async findOne(@Param('id') id: string): Promise<UserV2Response> {
+  async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<UserV2Response> {
     const user = await this.usersService.findOne(id);
-    // V2 response format with breaking changes
+    // Breaking change: name split in two, email renamed
     return {
       id: user.id,
       firstName: user.firstName,
@@ -96,7 +84,7 @@ export class UsersV2Controller {
   }
 }
 
-// Per-route versioning - different versions for different routes
+// Per-route versioning inside one controller
 @Controller('users')
 export class UsersController {
   @Get()
@@ -112,80 +100,36 @@ export class UsersController {
   }
 
   @Get(':id')
-  @Version(['1', '2']) // Same handler for multiple versions
-  findOne(@Param('id') id: string): Promise<User> {
+  @Version(['1', '2']) // Same handler for both versions
+  findOne(@Param('id', ParseUUIDPipe) id: string): Promise<User> {
     return this.usersService.findOne(id);
   }
 
   @Post()
-  @Version(VERSION_NEUTRAL) // Available in all versions
+  @Version(VERSION_NEUTRAL) // Matches any version, or none
   create(@Body() dto: CreateUserDto): Promise<User> {
     return this.usersService.create(dto);
   }
 }
 
-// Shared service with version-specific logic
-@Injectable()
-export class UsersService {
-  async findOne(id: string, version: string): Promise<any> {
-    const user = await this.repo.findOne({ where: { id } });
+// Keep the service version-free. The controller for each version shapes the response,
+// so do not read the version header by hand and branch on it in the service.
 
-    if (version === '1') {
-      return this.toV1Response(user);
-    }
-    return this.toV2Response(user);
-  }
-
-  private toV1Response(user: User): UserV1Response {
-    return {
-      id: user.id,
-      name: `${user.firstName} ${user.lastName}`,
-      email: user.email,
-    };
-  }
-
-  private toV2Response(user: User): UserV2Response {
-    return {
-      id: user.id,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      emailAddress: user.email,
-      createdAt: user.createdAt,
-    };
-  }
-}
-
-// Controller extracts version
-@Controller('users')
-export class UsersController {
-  @Get(':id')
-  async findOne(
-    @Param('id') id: string,
-    @Headers('X-API-Version') version: string = '1',
-  ): Promise<any> {
-    return this.usersService.findOne(id, version);
-  }
-}
-
-// Deprecation strategy - mark old versions as deprecated
-@Controller('users')
-@Version('1')
-@UseInterceptors(DeprecationInterceptor)
-export class UsersV1Controller {
-  // All V1 routes will include deprecation warning
-}
-
+// Deprecation: tell v1 clients when it goes away
 @Injectable()
 export class DeprecationInterceptor implements NestInterceptor {
-  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
     const response = context.switchToHttp().getResponse();
     response.setHeader('Deprecation', 'true');
-    response.setHeader('Sunset', 'Sat, 1 Jan 2025 00:00:00 GMT');
+    response.setHeader('Sunset', 'Thu, 31 Dec 2026 23:59:59 GMT'); // a date in the future
     response.setHeader('Link', '</v2/users>; rel="successor-version"');
-
     return next.handle();
   }
 }
+
+@Controller({ path: 'users', version: '1' })
+@UseInterceptors(DeprecationInterceptor)
+export class UsersV1Controller {}
 ```
 
-Reference: [NestJS Versioning](https://docs.nestjs.com/techniques/versioning)
+Reference: [NestJS Versioning](https://docs.nestjs.com/http/versioning)

@@ -8,7 +8,7 @@ The section ID (in parentheses) is the filename prefix used to group rules.
 ## 1. Architecture (arch)
 
 **Impact:** CRITICAL
-**Description:** Proper module organization and dependency management are the foundation of maintainable NestJS applications. Circular dependencies and god services are the #1 architecture killer.
+**Description:** Proper module organization and dependency management are the foundation of maintainable NestJS applications. Circular dependencies and god services are common sources of startup errors and hard-to-change code.
 
 ## 2. Dependency Injection (di)
 
@@ -54,3 +54,8 @@ The section ID (in parentheses) is the filename prefix used to group rules.
 
 **Impact:** LOW-MEDIUM
 **Description:** Configuration management, structured logging, and graceful shutdown ensure production readiness and zero-downtime deployments.
+
+## 11. Domain-Driven Design & Modular Monolith (ddd)
+
+**Impact:** MEDIUM-HIGH
+**Description:** Opt-in rules for apps with real business rules built as a modular monolith. Each module is a bounded context with domain, application, and infrastructure layers; modules talk only through public contracts or integration events delivered by a transactional outbox. Skip for simple CRUD apps.

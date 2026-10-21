@@ -68,7 +68,8 @@ export class User {
   ssn: string;
 
   @Column({ default: false })
-  @Exclude({ toPlainOnly: true }) // Exclude from response, allow in requests
+  @Exclude() // Hidden in responses. Never accept it from request bodies either:
+  // input DTOs with whitelist: true leave it out, so users cannot make themselves admin
   isAdmin: boolean;
 
   @CreateDateColumn()
@@ -179,4 +180,4 @@ export class UsersController {
 }
 ```
 
-Reference: [NestJS Serialization](https://docs.nestjs.com/techniques/serialization)
+Reference: [NestJS Serialization](https://docs.nestjs.com/application/serialization)

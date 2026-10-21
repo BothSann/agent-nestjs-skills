@@ -105,4 +105,4 @@ export class AnalyticsListener {
 }
 ```
 
-Reference: [NestJS Events](https://docs.nestjs.com/techniques/events)
+Reference: [NestJS Events](https://docs.nestjs.com/application/events)

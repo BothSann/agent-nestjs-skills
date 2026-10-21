@@ -54,7 +54,7 @@ npx skills add Kadajett/agent-nestjs-skills -a claude-code -a cursor
     - `area-description.md` - Individual rule files
 - `scripts/` - Build scripts and utilities
 - `metadata.json` - Document metadata (version, organization, abstract)
-- __`AGENTS.md`__ - Compiled output (generated)
+- __`AGENTS.md`__ - Generated rule index, kept under 500 lines (one line per rule, links to `rules/`)
 
 ## Getting Started
 

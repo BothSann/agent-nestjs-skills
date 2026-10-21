@@ -150,4 +150,6 @@ function createMockExecutionContext(request: Partial<Request>): ExecutionContext
 }
 ```
 
-Reference: [NestJS Testing](https://docs.nestjs.com/fundamentals/testing)
+The examples use Jest. The NestJS docs now use Vitest: swap `jest.fn()` for `vi.fn()`, `jest.Mocked<T>` for `Mocked<T>` (from `vitest`), and `jest.spyOn` for `vi.spyOn`. Everything else stays the same. New Nest projects come set up for Vitest; for older ones see the SWC recipe (https://docs.nestjs.com/recipes/swc).
+
+Reference: [NestJS Unit Testing](https://docs.nestjs.com/fundamentals/unit-testing)

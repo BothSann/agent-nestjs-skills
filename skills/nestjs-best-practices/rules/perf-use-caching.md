@@ -32,10 +32,10 @@ export class ProductsService {
 @Injectable()
 export class UsersService {
   @CacheKey('users')
-  @CacheTTL(3600)
-  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(3600) // TTL is in milliseconds since cache-manager v5: this is 3.6 seconds, not 1 hour
+  @UseInterceptors(CacheInterceptor) // Interceptors only run on controllers, not services - this does nothing
   async findAll(): Promise<User[]> {
-    // Caching user list for 1 hour is wrong if data changes frequently
+    // Even if it worked, caching a user list that changes often serves stale data
     return this.usersRepo.find();
   }
 }
@@ -102,7 +102,9 @@ export class CategoriesController {
 
   @Get(':id')
   @CacheTTL(60 * 1000) // 1 minute
-  @CacheKey('category')
+  // No @CacheKey here: the default key is the URL, so /categories/1 and
+  // /categories/2 are cached apart. A fixed @CacheKey('category') would
+  // return the first category cached for every id.
   findOne(@Param('id') id: string): Promise<Category> {
     return this.categoriesService.findOne(id);
   }
@@ -125,4 +127,4 @@ export class CacheInvalidationService {
 }
 ```
 
-Reference: [NestJS Caching](https://docs.nestjs.com/techniques/caching)
+Reference: [NestJS Caching](https://docs.nestjs.com/data/caching)

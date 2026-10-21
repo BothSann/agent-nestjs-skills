@@ -4,12 +4,12 @@ description: NestJS best practices and architecture patterns for building produc
 license: MIT
 metadata:
   author: Kadajett
-  version: "1.2.0"
+  version: "1.3.0"
 ---
 
 # NestJS Best Practices
 
-Comprehensive best practices guide for NestJS applications. Contains 40 rules across 10 categories, prioritized by impact to guide automated refactoring and code generation.
+Comprehensive best practices guide for NestJS applications. Contains 50 rules across 11 categories, prioritized by impact to guide automated refactoring and code generation.
 
 ## When to Apply
 
@@ -21,6 +21,7 @@ Reference these guidelines when:
 - Refactoring existing NestJS codebases
 - Optimizing performance or database queries
 - Building microservices architectures
+- Building a modular monolith with DDD (bounded contexts, aggregates, outbox, CQRS)
 
 ## Rule Categories by Priority
 
@@ -36,6 +37,7 @@ Reference these guidelines when:
 | 8 | API Design | MEDIUM | `api-` |
 | 9 | Microservices | MEDIUM | `micro-` |
 | 10 | DevOps & Deployment | LOW-MEDIUM | `devops-` |
+| 11 | Domain-Driven Design & Modular Monolith (opt-in) | MEDIUM-HIGH | `ddd-` |
 
 ## Quick Reference
 
@@ -68,6 +70,7 @@ Reference these guidelines when:
 - `security-auth-jwt` - Secure JWT authentication
 - `security-validate-all-input` - Validate with class-validator
 - `security-use-guards` - Authentication and authorization guards
+- `security-headers-cors-csrf` - Security headers, strict CORS, CSRF protection
 - `security-sanitize-output` - Prevent XSS attacks
 - `security-rate-limiting` - Implement rate limiting
 
@@ -101,13 +104,27 @@ Reference these guidelines when:
 
 - `micro-use-patterns` - Message and event patterns
 - `micro-use-health-checks` - Health checks for orchestration
+- `micro-use-idempotency-keys` - Idempotency keys so retries never run twice
 - `micro-use-queues` - Background job processing
+- `micro-use-resilience` - Timeouts, retries, circuit breakers
 
 ### 10. DevOps & Deployment (LOW-MEDIUM)
 
 - `devops-use-config-module` - Environment configuration
 - `devops-use-logging` - Structured logging
+- `devops-use-tracing` - OpenTelemetry tracing
 - `devops-graceful-shutdown` - Zero-downtime deployments
+
+### 11. Domain-Driven Design & Modular Monolith (MEDIUM-HIGH, opt-in)
+
+Apply only when the app has real business rules and is built as a modular monolith. Skip for simple CRUD.
+
+- `ddd-bounded-context-modules` - One module per bounded context with domain/application/infrastructure layers
+- `ddd-module-public-api` - Modules talk only through a public facade or integration events
+- `ddd-rich-domain-model` - Aggregates and value objects hold the rules; keep them apart from ORM entities
+- `ddd-aggregate-repository` - One repository per aggregate, interface in domain
+- `ddd-transactional-outbox` - Save events with data in one transaction; consumers dedupe with an inbox
+- `ddd-cqrs` - Commands go through aggregates; queries read directly with `@nestjs/cqrs`
 
 ## How to Use
 
@@ -125,7 +142,8 @@ Each rule file contains:
 - Correct code example with explanation
 - Additional context and references
 
-## Full Compiled Document
+## Rule Index
 
-For the complete guide with all rules expanded in a single document, see
+For a one-page index of every rule with a one-line reason and a link to its file, see
 [AGENTS.md in the repository](https://github.com/Kadajett/agent-nestjs-skills/blob/main/AGENTS.md).
+Full explanations and code examples live only in `rules/`.

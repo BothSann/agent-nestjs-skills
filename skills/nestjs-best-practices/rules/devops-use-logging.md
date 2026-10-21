@@ -7,7 +7,7 @@ tags: devops, logging, structured-logs, pino
 
 ## Use Structured Logging
 
-Use NestJS Logger with structured JSON output in production. Include contextual information (request ID, user ID, operation) to trace requests across services. Avoid console.log and implement proper log levels.
+Use the built-in `ConsoleLogger` with `json: true` in production (no extra package needed). Include contextual information (request ID, user ID, operation) to trace requests across services. Avoid console.log and implement proper log levels.
 
 **Incorrect (using console.log in production):**
 
@@ -41,87 +41,41 @@ logger.log('User ' + userId + ' created at ' + new Date());
 **Correct (use structured logging with context):**
 
 ```typescript
-// Configure logger in main.ts
+// main.ts: the built-in ConsoleLogger writes one JSON object per line to stdout.
+// Let the platform (Docker, Kubernetes, ECS) collect and ship it. No log files in the app.
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
-    logger:
-      process.env.NODE_ENV === 'production'
-        ? ['error', 'warn', 'log']
-        : ['error', 'warn', 'log', 'debug', 'verbose'],
+    logger: new ConsoleLogger({
+      json: process.env.NODE_ENV === 'production',
+      logLevels:
+        process.env.NODE_ENV === 'production'
+          ? ['log', 'warn', 'error', 'fatal']
+          : ['log', 'warn', 'error', 'fatal', 'debug', 'verbose'],
+    }),
   });
+  await app.listen(3000);
 }
 
-// Use NestJS Logger with context
+// Use Nest's Logger with a context and structured params (objects after the message).
+// In JSON mode they land under "params" (or at the root with flattenParams: true).
 @Injectable()
 export class UsersService {
   private readonly logger = new Logger(UsersService.name);
 
   async createUser(dto: CreateUserDto): Promise<User> {
-    this.logger.log('Creating user', { email: dto.email });
-
     try {
       const user = await this.repo.save(dto);
-      this.logger.log('User created', { userId: user.id });
+      this.logger.log('User created', { userId: user.id }); // ids, not emails or passwords
       return user;
     } catch (error) {
-      this.logger.error('Failed to create user', error.stack, {
-        email: dto.email,
-      });
+      // error(message, stack) puts the stack in its own "stack" field
+      this.logger.error('Failed to create user', error instanceof Error ? error.stack : String(error));
       throw error;
     }
   }
 }
 
-// Custom logger for JSON output
-@Injectable()
-export class JsonLogger implements LoggerService {
-  log(message: string, context?: object): void {
-    console.log(
-      JSON.stringify({
-        level: 'info',
-        timestamp: new Date().toISOString(),
-        message,
-        ...context,
-      }),
-    );
-  }
-
-  error(message: string, trace?: string, context?: object): void {
-    console.error(
-      JSON.stringify({
-        level: 'error',
-        timestamp: new Date().toISOString(),
-        message,
-        trace,
-        ...context,
-      }),
-    );
-  }
-
-  warn(message: string, context?: object): void {
-    console.warn(
-      JSON.stringify({
-        level: 'warn',
-        timestamp: new Date().toISOString(),
-        message,
-        ...context,
-      }),
-    );
-  }
-
-  debug(message: string, context?: object): void {
-    console.debug(
-      JSON.stringify({
-        level: 'debug',
-        timestamp: new Date().toISOString(),
-        message,
-        ...context,
-      }),
-    );
-  }
-}
-
-// Request context logging with ClsModule
+// Request id on every line: keep it in AsyncLocalStorage with nestjs-cls
 import { ClsModule, ClsService } from 'nestjs-cls';
 
 @Module({
@@ -131,62 +85,32 @@ import { ClsModule, ClsService } from 'nestjs-cls';
       middleware: {
         mount: true,
         generateId: true,
+        // Reuse the caller's id if it sent one, so logs join up across services
+        idGenerator: (req: Request) => (req.headers['x-request-id'] as string) ?? randomUUID(),
       },
     }),
   ],
 })
 export class AppModule {}
 
-// Middleware to set request context
+// Middleware runs BEFORE guards, so req.user is not set yet there.
+// Add the user id after authentication, e.g. at the end of your auth guard:
+//   this.cls.set('userId', request.user.id);
+
+// Logger that adds the request id and user id to each line
 @Injectable()
-export class RequestContextMiddleware implements NestMiddleware {
-  constructor(private cls: ClsService) {}
+export class AppLogger {
+  private readonly logger = new Logger();
 
-  use(req: Request, res: Response, next: NextFunction): void {
-    const requestId = req.headers['x-request-id'] || randomUUID();
-    this.cls.set('requestId', requestId);
-    this.cls.set('userId', req.user?.id);
+  constructor(private readonly cls: ClsService) {}
 
-    res.setHeader('x-request-id', requestId);
-    next();
+  log(message: string, context: string, params: Record<string, unknown> = {}): void {
+    this.logger.log(message, { ...params, requestId: this.cls.getId(), userId: this.cls.get('userId') }, context);
   }
 }
 
-// Logger that includes request context
-@Injectable()
-export class ContextLogger {
-  constructor(private cls: ClsService) {}
+// Need redaction, many transports, or very high volume? Use Pino instead
 
-  log(message: string, data?: object): void {
-    console.log(
-      JSON.stringify({
-        level: 'info',
-        timestamp: new Date().toISOString(),
-        requestId: this.cls.get('requestId'),
-        userId: this.cls.get('userId'),
-        message,
-        ...data,
-      }),
-    );
-  }
-
-  error(message: string, error: Error, data?: object): void {
-    console.error(
-      JSON.stringify({
-        level: 'error',
-        timestamp: new Date().toISOString(),
-        requestId: this.cls.get('requestId'),
-        userId: this.cls.get('userId'),
-        message,
-        error: error.message,
-        stack: error.stack,
-        ...data,
-      }),
-    );
-  }
-}
-
-// Pino integration for high-performance logging
 import { LoggerModule } from 'nestjs-pino';
 
 @Module({
@@ -229,4 +153,4 @@ export class UsersService {
 }
 ```
 
-Reference: [NestJS Logger](https://docs.nestjs.com/techniques/logger)
+Reference: [NestJS Logger](https://docs.nestjs.com/application/logger)

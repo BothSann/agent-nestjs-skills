@@ -164,4 +164,4 @@ ConfigModule.forRoot({
 // DB_PORT=5432
 ```
 
-Reference: [NestJS Configuration](https://docs.nestjs.com/techniques/configuration)
+Reference: [NestJS Configuration](https://docs.nestjs.com/application/configuration)
