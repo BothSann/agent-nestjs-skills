@@ -70,7 +70,7 @@ import { Request } from 'express';
 
 @Injectable({ scope: Scope.REQUEST })
 export class AuditService {
-  constructor(@Inject(REQUEST) private request: Request) {}
+  constructor(@Inject(REQUEST) private request: Request & { user?: { id: string } }) {}
 
   log(action: string) {
     console.log(`User ${this.request.user?.id} performed ${action}`);

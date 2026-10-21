@@ -146,7 +146,7 @@ function createMockExecutionContext(request: Partial<Request>): ExecutionContext
     }),
     getHandler: () => jest.fn(),
     getClass: () => jest.fn(),
-  } as ExecutionContext;
+  } as unknown as ExecutionContext; // partial mock, so cast through unknown
 }
 ```
 
