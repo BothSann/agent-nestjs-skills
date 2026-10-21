@@ -4,12 +4,12 @@ description: NestJS best practices and architecture patterns for building produc
 license: MIT
 metadata:
   author: Kadajett
-  version: "1.3.0"
+  version: "1.4.0"
 ---
 
 # NestJS Best Practices
 
-Comprehensive best practices guide for NestJS applications. Contains 50 rules across 11 categories, prioritized by impact to guide automated refactoring and code generation.
+Comprehensive best practices guide for NestJS applications. Contains 54 rules across 11 categories, prioritized by impact to guide automated refactoring and code generation.
 
 ## When to Apply
 
@@ -70,6 +70,7 @@ Reference these guidelines when:
 - `security-auth-jwt` - Secure JWT authentication
 - `security-validate-all-input` - Validate with class-validator
 - `security-use-guards` - Authentication and authorization guards
+- `security-authorize-records` - Per-record permission checks, deny by default
 - `security-headers-cors-csrf` - Security headers, strict CORS, CSRF protection
 - `security-sanitize-output` - Prevent XSS attacks
 - `security-rate-limiting` - Implement rate limiting
@@ -80,6 +81,7 @@ Reference these guidelines when:
 - `perf-use-caching` - Implement caching strategies
 - `perf-optimize-database` - Optimize database queries
 - `perf-lazy-loading` - Lazy load modules for faster startup
+- `perf-use-fastify` - Fastify adapter, platform-agnostic code
 
 ### 6. Testing (MEDIUM-HIGH)
 
@@ -92,6 +94,7 @@ Reference these guidelines when:
 - `db-use-transactions` - Transaction management
 - `db-avoid-n-plus-one` - Avoid N+1 query problems
 - `db-use-migrations` - Use migrations for schema changes
+- `db-drizzle-prisma-integration` - Drizzle and Prisma through Nest providers
 
 ### 8. API Design (MEDIUM)
 
@@ -111,6 +114,7 @@ Reference these guidelines when:
 ### 10. DevOps & Deployment (LOW-MEDIUM)
 
 - `devops-use-config-module` - Environment configuration
+- `devops-docker-and-dependencies` - Small non-root images, dependency audit
 - `devops-use-logging` - Structured logging
 - `devops-use-tracing` - OpenTelemetry tracing
 - `devops-graceful-shutdown` - Zero-downtime deployments
