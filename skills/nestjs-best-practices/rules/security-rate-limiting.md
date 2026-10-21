@@ -101,25 +101,23 @@ export class HealthController {
   }
 }
 
-// Custom throttle per user type
+// Count per user instead of per IP: override getTracker()
+// (documented override points: getTracker, generateKey, handleRequest)
 @Injectable()
-export class CustomThrottlerGuard extends ThrottlerGuard {
-  protected async getTracker(req: Request): Promise<string> {
-    // Use user ID if authenticated, IP otherwise
-    return req.user?.id || req.ip;
-  }
-
-  protected async getLimit(context: ExecutionContext): Promise<number> {
-    const request = context.switchToHttp().getRequest();
-
-    // Higher limits for authenticated users
-    if (request.user) {
-      return request.user.isPremium ? 1000 : 200;
-    }
-
-    return 50; // Anonymous users
+export class UserThrottlerGuard extends ThrottlerGuard {
+  protected async getTracker(req: Record<string, any>): Promise<string> {
+    // req.user must be set by an auth guard that runs before this one
+    return req.user?.id ?? req.ip;
   }
 }
+
+// Register it instead of the default guard
+providers: [{ provide: APP_GUARD, useClass: UserThrottlerGuard }],
+
+// Behind a proxy or load balancer, req.ip is the proxy's address unless you trust it:
+// app.set('trust proxy', 1); // Express
 ```
+
+Note: `ThrottlerGuard` has no documented `getLimit()` method to override. For different limits per plan (free vs paid), use different `@Throttle()` values per route, or check plan quotas in your own guard or service.
 
 Reference: [NestJS Throttler](https://docs.nestjs.com/security/rate-limiting)

@@ -1,13 +1,13 @@
 ---
 title: Organize by Feature Modules
 impact: CRITICAL
-impactDescription: "3-5x faster onboarding and development"
+impactDescription: "Related code lives together, so features are easier to find and change"
 tags: architecture, modules, organization
 ---
 
 ## Organize by Feature Modules
 
-Organize your application into feature modules that encapsulate related functionality. Each feature module should be self-contained with its own controllers, services, entities, and DTOs. Avoid organizing by technical layer (all controllers together, all services together). This enables 3-5x faster onboarding and feature development.
+Organize your application into feature modules that encapsulate related functionality. Each feature module should be self-contained with its own controllers, services, entities, and DTOs. Avoid organizing by technical layer (all controllers together, all services together). This keeps everything for one feature in one place, so new developers find code faster and a change touches one folder.
 
 **Incorrect (technical layer organization):**
 

@@ -34,189 +34,80 @@ export class ProcessingService {
 }
 ```
 
-**Correct (enable shutdown hooks and handle cleanup):**
+**Correct (let Nest run the shutdown, drain in the right hook):**
 
 ```typescript
-// Enable shutdown hooks in main.ts
+// main.ts: one line. Nest listens for SIGTERM/SIGINT, runs the hooks, closes the server.
+// Do not add your own process.on('SIGTERM') as well: shutdown would run twice.
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  // Enable shutdown hooks
   app.enableShutdownHooks();
-
-  // Optional: Add timeout for forced shutdown
-  const server = await app.listen(3000);
-  server.setTimeout(30000); // 30 second timeout
-
-  // Handle graceful shutdown
-  const signals = ['SIGTERM', 'SIGINT'];
-  signals.forEach((signal) => {
-    process.on(signal, async () => {
-      console.log(`Received ${signal}, starting graceful shutdown...`);
-
-      // Stop accepting new connections
-      server.close(async () => {
-        console.log('HTTP server closed');
-        await app.close();
-        process.exit(0);
-      });
-
-      // Force exit after timeout
-      setTimeout(() => {
-        console.error('Forced shutdown after timeout');
-        process.exit(1);
-      }, 30000);
-    });
-  });
+  await app.listen(3000);
 }
 
-// Lifecycle hooks for cleanup
+// Shutdown order (from the docs):
+//   1. onModuleDestroy()
+//   2. beforeApplicationShutdown(signal)  <- server still accepts requests here
+//   3. HTTP server closes, in-flight requests finish
+//   4. onApplicationShutdown(signal)      <- server is already closed here
+
+// Step 2: fail readiness, then wait so the load balancer stops sending traffic
 @Injectable()
-export class DatabaseService implements OnApplicationShutdown {
-  private readonly connections: Connection[] = [];
-
-  async onApplicationShutdown(signal?: string): Promise<void> {
-    console.log(`Database service shutting down on ${signal}`);
-
-    // Close all connections gracefully
-    await Promise.all(
-      this.connections.map((conn) => conn.close()),
-    );
-
-    console.log('All database connections closed');
-  }
-}
-
-// Queue processor with graceful shutdown
-@Injectable()
-export class QueueService implements OnApplicationShutdown, OnModuleDestroy {
-  private isShuttingDown = false;
-
-  onModuleDestroy(): void {
-    this.isShuttingDown = true;
-  }
-
-  async onApplicationShutdown(): Promise<void> {
-    // Wait for current jobs to complete
-    await this.queue.close();
-  }
-
-  async processJob(job: Job): Promise<void> {
-    if (this.isShuttingDown) {
-      throw new Error('Service is shutting down');
-    }
-    await this.doWork(job);
-  }
-}
-
-// WebSocket gateway cleanup
-@WebSocketGateway()
-export class EventsGateway implements OnApplicationShutdown {
-  @WebSocketServer()
-  server: Server;
-
-  async onApplicationShutdown(): Promise<void> {
-    // Notify all connected clients
-    this.server.emit('shutdown', { message: 'Server is shutting down' });
-
-    // Close all connections
-    this.server.disconnectSockets();
-  }
-}
-
-// Health check integration
-@Injectable()
-export class ShutdownService {
-  private isShuttingDown = false;
-
-  startShutdown(): void {
-    this.isShuttingDown = true;
-  }
+export class ShutdownService implements BeforeApplicationShutdown {
+  private shuttingDown = false;
 
   isShutdown(): boolean {
-    return this.isShuttingDown;
+    return this.shuttingDown;
+  }
+
+  async beforeApplicationShutdown(signal?: string): Promise<void> {
+    this.shuttingDown = true;
+    // Must be longer than readiness periodSeconds * failureThreshold
+    await new Promise((resolve) => setTimeout(resolve, 5000));
   }
 }
 
 @Controller('health')
 export class HealthController {
-  constructor(private shutdownService: ShutdownService) {}
+  constructor(
+    private readonly health: HealthCheckService,
+    private readonly db: TypeOrmHealthIndicator,
+    private readonly shutdown: ShutdownService,
+  ) {}
 
   @Get('ready')
   @HealthCheck()
   readiness(): Promise<HealthCheckResult> {
-    // Return 503 during shutdown - k8s stops sending traffic
-    if (this.shutdownService.isShutdown()) {
-      throw new ServiceUnavailableException('Shutting down');
+    if (this.shutdown.isShutdown()) {
+      throw new ServiceUnavailableException('Shutting down'); // 503
     }
-
-    return this.health.check([
-      () => this.db.pingCheck('database'),
-    ]);
+    return this.health.check([() => this.db.pingCheck('database')]);
   }
 }
 
-// Integrate with shutdown
-@Injectable()
-export class AppShutdownService implements OnApplicationShutdown {
-  constructor(private shutdownService: ShutdownService) {}
+// Step 1: stop taking new background work before the server closes
+@Processor('reports')
+export class ReportsProcessor extends WorkerHost implements OnModuleDestroy {
+  async onModuleDestroy(): Promise<void> {
+    await this.worker.close(); // waits for the running job, takes no new ones
+  }
 
-  async onApplicationShutdown(): Promise<void> {
-    // Mark as unhealthy first
-    this.shutdownService.startShutdown();
-
-    // Wait for k8s to update endpoints
-    await this.sleep(5000);
-
-    // Then proceed with cleanup
+  async process(job: Job): Promise<void> {
+    await this.generate(job.data);
   }
 }
 
-// Request tracking for in-flight requests
+// Step 4: close pools and clients last, after requests have finished
 @Injectable()
-export class RequestTracker implements NestMiddleware, OnApplicationShutdown {
-  private activeRequests = 0;
-  private isShuttingDown = false;
-  private shutdownPromise: Promise<void> | null = null;
-  private resolveShutdown: (() => void) | null = null;
+export class DatabaseService implements OnApplicationShutdown {
+  constructor(private readonly pool: Pool) {}
 
-  use(req: Request, res: Response, next: NextFunction): void {
-    if (this.isShuttingDown) {
-      res.status(503).send('Service Unavailable');
-      return;
-    }
-
-    this.activeRequests++;
-
-    res.on('finish', () => {
-      this.activeRequests--;
-      if (this.isShuttingDown && this.activeRequests === 0 && this.resolveShutdown) {
-        this.resolveShutdown();
-      }
-    });
-
-    next();
-  }
-
-  async onApplicationShutdown(): Promise<void> {
-    this.isShuttingDown = true;
-
-    if (this.activeRequests > 0) {
-      console.log(`Waiting for ${this.activeRequests} requests to complete`);
-      this.shutdownPromise = new Promise((resolve) => {
-        this.resolveShutdown = resolve;
-      });
-
-      // Wait with timeout
-      await Promise.race([
-        this.shutdownPromise,
-        new Promise((resolve) => setTimeout(resolve, 30000)),
-      ]);
-    }
-
-    console.log('All requests completed');
+  async onApplicationShutdown(signal?: string): Promise<void> {
+    await this.pool.end();
   }
 }
 ```
+
+Set the Kubernetes `terminationGracePeriodSeconds` longer than the readiness wait plus your slowest request, or the pod is killed mid-shutdown. If idle keep-alive connections hold the process open, see `forceCloseConnections` in the docs FAQ, but it also cuts requests still running, so keep the readiness wait. On Windows, `SIGTERM` is never delivered (see the docs warning), so test shutdown on Linux or in a container.
 
 Reference: [NestJS Lifecycle Events](https://docs.nestjs.com/fundamentals/lifecycle-events)

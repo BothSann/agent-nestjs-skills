@@ -52,7 +52,7 @@ async findOne(@Param('id') id: string): Promise<User> {
 
 ```typescript
 // Sanitize HTML content before storage
-import * as sanitizeHtml from 'sanitize-html';
+import sanitizeHtml from 'sanitize-html'; // default import (esModuleInterop, on in new Nest projects)
 
 @Injectable()
 export class CommentsService {
@@ -113,25 +113,10 @@ async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<User> {
   return user;
 }
 
-// Use Helmet for CSP headers
-import helmet from 'helmet';
-
+// Content-Security-Policy and other headers: see security-headers-cors-csrf
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-
-  app.use(
-    helmet({
-      contentSecurityPolicy: {
-        directives: {
-          defaultSrc: ["'self'"],
-          scriptSrc: ["'self'"],
-          styleSrc: ["'self'", "'unsafe-inline'"],
-          imgSrc: ["'self'", 'data:', 'https:'],
-        },
-      },
-    }),
-  );
-
+  app.useSecurityHeaders(); // NestJS >= 12.1, Helmet 8 defaults incl. CSP; older: app.use(helmet())
   await app.listen(3000);
 }
 ```

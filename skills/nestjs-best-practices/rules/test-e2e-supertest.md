@@ -42,7 +42,7 @@ describe('Users API', () => {
 // Proper E2E test setup
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest';
 import { AppModule } from '../src/app.module';
 
 describe('UsersController (e2e)', () => {
@@ -175,4 +175,4 @@ describe('Orders API (e2e)', () => {
 });
 ```
 
-Reference: [NestJS E2E Testing](https://docs.nestjs.com/fundamentals/testing#end-to-end-testing)
+Reference: [NestJS E2E Testing](https://docs.nestjs.com/fundamentals/e2e-testing)

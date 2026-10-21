@@ -9,6 +9,8 @@ tags: microservices, queues, bullmq, background-jobs
 
 Use `@nestjs/bullmq` for background job processing. Queues decouple long-running tasks from HTTP requests, enable retry logic, and distribute workload across workers. Use them for emails, file processing, notifications, and any task that shouldn't block user requests.
 
+Note: `@nestjs/bullmq` is not the same API as the older `@nestjs/bull`. In BullMQ, a consumer class extends `WorkerHost` and implements one `process()` method. The Bull-style `@Process('name')` handler decorator and `@OnQueueActive()` / `@OnQueueCompleted()` / `@OnQueueFailed()` do not work with BullMQ. Switch on `job.name` inside `process()`, and listen to worker events with `@OnWorkerEvent()`.
+
 **Incorrect (long-running tasks in HTTP handlers):**
 
 ```typescript
@@ -38,7 +40,17 @@ export class EmailService {
 // Use setInterval for scheduled tasks
 setInterval(async () => {
   await cleanupOldRecords();
-}, 60000); // No error handling, memory leaks
+}, 60000); // No error handling, runs on every instance
+
+// Bull (old package) API used with BullMQ - these handlers never run
+@Processor('reports')
+export class ReportsProcessor {
+  @Process('generate') // Not supported by @nestjs/bullmq
+  async generate(job: Job) {}
+
+  @OnQueueFailed() // From @nestjs/bull, not @nestjs/bullmq
+  onFailed(job: Job, error: Error) {}
+}
 ```
 
 **Correct (use BullMQ for background processing):**
@@ -67,31 +79,36 @@ import { BullModule } from '@nestjs/bullmq';
     BullModule.registerQueue(
       { name: 'email' },
       { name: 'reports' },
-      { name: 'notifications' },
+      { name: 'maintenance' },
     ),
   ],
+  providers: [ReportsProcessor, EmailProcessor, MaintenanceProcessor],
 })
 export class QueueModule {}
 
 // Producer: Add jobs to queue
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
+
 @Injectable()
 export class ReportsService {
-  constructor(
-    @InjectQueue('reports') private reportsQueue: Queue,
-  ) {}
+  constructor(@InjectQueue('reports') private readonly reportsQueue: Queue) {}
 
   async requestReport(dto: GenerateReportDto): Promise<{ jobId: string }> {
     // Return immediately, process in background
     const job = await this.reportsQueue.add('generate', dto, {
       priority: dto.urgent ? 1 : 10,
-      delay: dto.scheduledFor ? Date.parse(dto.scheduledFor) - Date.now() : 0,
+      delay: dto.scheduledFor ? Math.max(0, Date.parse(dto.scheduledFor) - Date.now()) : 0,
     });
 
-    return { jobId: job.id };
+    return { jobId: job.id! };
   }
 
   async getJobStatus(jobId: string): Promise<JobStatus> {
     const job = await this.reportsQueue.getJob(jobId);
+    if (!job) {
+      throw new NotFoundException(`Job ${jobId} not found`);
+    }
     return {
       status: await job.getState(),
       progress: job.progress,
@@ -100,16 +117,24 @@ export class ReportsService {
   }
 }
 
-// Consumer: Process jobs
-@Processor('reports')
-export class ReportsProcessor {
+// Consumer: extend WorkerHost and implement process()
+import { Processor, WorkerHost, OnWorkerEvent } from '@nestjs/bullmq';
+import { Job } from 'bullmq';
+
+@Processor('reports', { concurrency: 2 }) // run up to 2 jobs at once per instance
+export class ReportsProcessor extends WorkerHost {
   private readonly logger = new Logger(ReportsProcessor.name);
 
-  @Process('generate')
-  async generateReport(job: Job<GenerateReportDto>): Promise<Report> {
-    this.logger.log(`Processing report job ${job.id}`);
+  async process(job: Job<GenerateReportDto>): Promise<Report> {
+    switch (job.name) {
+      case 'generate':
+        return this.generateReport(job);
+      default:
+        throw new Error(`Unknown job name: ${job.name}`);
+    }
+  }
 
-    // Update progress
+  private async generateReport(job: Job<GenerateReportDto>): Promise<Report> {
     await job.updateProgress(10);
 
     const data = await this.fetchData(job.data);
@@ -121,49 +146,43 @@ export class ReportsProcessor {
     await this.saveReport(report);
     await job.updateProgress(100);
 
-    return report;
+    return report; // stored as job.returnvalue
   }
 
-  @OnQueueActive()
+  // Worker events use @OnWorkerEvent, inside the processor class
+  @OnWorkerEvent('active')
   onActive(job: Job) {
-    this.logger.log(`Processing job ${job.id}`);
+    this.logger.log(`Processing job ${job.id} (${job.name})`);
   }
 
-  @OnQueueCompleted()
-  onCompleted(job: Job, result: any) {
+  @OnWorkerEvent('completed')
+  onCompleted(job: Job) {
     this.logger.log(`Job ${job.id} completed`);
   }
 
-  @OnQueueFailed()
-  onFailed(job: Job, error: Error) {
-    this.logger.error(`Job ${job.id} failed: ${error.message}`);
+  @OnWorkerEvent('failed')
+  onFailed(job: Job | undefined, error: Error) {
+    this.logger.error(`Job ${job?.id} failed: ${error.message}`, error.stack);
   }
 }
 
-// Email queue with retry
+// Email queue: throwing makes BullMQ retry, using the job's attempts/backoff
 @Processor('email')
-export class EmailProcessor {
-  @Process('send')
-  async sendEmail(job: Job<SendEmailDto>): Promise<void> {
-    const { to, template, data } = job.data;
+export class EmailProcessor extends WorkerHost {
+  constructor(private readonly mailer: MailerService) {
+    super();
+  }
 
-    try {
-      await this.mailer.send({
-        to,
-        template,
-        context: data,
-      });
-    } catch (error) {
-      // BullMQ will retry based on job options
-      throw error;
-    }
+  async process(job: Job<SendEmailDto>): Promise<void> {
+    const { to, template, data } = job.data;
+    await this.mailer.send({ to, template, context: data });
   }
 }
 
 // Usage
 @Injectable()
 export class NotificationService {
-  constructor(@InjectQueue('email') private emailQueue: Queue) {}
+  constructor(@InjectQueue('email') private readonly emailQueue: Queue) {}
 
   async sendWelcome(user: User): Promise<void> {
     await this.emailQueue.add(
@@ -181,47 +200,51 @@ export class NotificationService {
   }
 }
 
-// Scheduled jobs
+// Scheduled jobs: job schedulers (BullMQ 5.16+) replace the old `repeat` option.
+// upsertJobScheduler is safe to call on every startup - it updates, never duplicates.
 @Injectable()
 export class ScheduledJobsService implements OnModuleInit {
-  constructor(@InjectQueue('maintenance') private queue: Queue) {}
+  constructor(@InjectQueue('maintenance') private readonly queue: Queue) {}
 
   async onModuleInit(): Promise<void> {
     // Clean up old reports daily at midnight
-    await this.queue.add(
-      'cleanup',
-      {},
-      {
-        repeat: { cron: '0 0 * * *' },
-        jobId: 'daily-cleanup', // Prevent duplicates
-      },
+    await this.queue.upsertJobScheduler(
+      'daily-cleanup',
+      { pattern: '0 0 * * *' },
+      { name: 'cleanup', data: {} },
     );
 
     // Send digest every hour
-    await this.queue.add(
-      'digest',
-      {},
-      {
-        repeat: { every: 60 * 60 * 1000 },
-        jobId: 'hourly-digest',
-      },
+    await this.queue.upsertJobScheduler(
+      'hourly-digest',
+      { every: 60 * 60 * 1000 },
+      { name: 'digest', data: {} },
     );
   }
 }
 
 @Processor('maintenance')
-export class MaintenanceProcessor {
-  @Process('cleanup')
-  async cleanup(): Promise<void> {
-    await this.cleanupOldReports();
-    await this.cleanupExpiredSessions();
+export class MaintenanceProcessor extends WorkerHost {
+  constructor(@InjectQueue('email') private readonly emailQueue: Queue) {
+    super();
   }
 
-  @Process('digest')
-  async sendDigest(): Promise<void> {
-    const users = await this.getUsersForDigest();
-    for (const user of users) {
-      await this.emailQueue.add('send', { to: user.email, template: 'digest' });
+  async process(job: Job): Promise<void> {
+    switch (job.name) {
+      case 'cleanup':
+        await this.cleanupOldReports();
+        await this.cleanupExpiredSessions();
+        return;
+      case 'digest': {
+        const users = await this.getUsersForDigest();
+        // One bulk call instead of one Redis round trip per user
+        await this.emailQueue.addBulk(
+          users.map((user) => ({ name: 'send', data: { to: user.email, template: 'digest' } })),
+        );
+        return;
+      }
+      default:
+        throw new Error(`Unknown job name: ${job.name}`);
     }
   }
 }
@@ -229,11 +252,12 @@ export class MaintenanceProcessor {
 // Queue monitoring with Bull Board
 import { BullBoardModule } from '@bull-board/nestjs';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
+import { ExpressAdapter } from '@bull-board/express';
 
 @Module({
   imports: [
     BullBoardModule.forRoot({
-      route: '/admin/queues',
+      route: '/admin/queues', // protect this route with an admin guard
       adapter: ExpressAdapter,
     }),
     BullBoardModule.forFeature({
@@ -249,4 +273,4 @@ import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 export class AdminModule {}
 ```
 
-Reference: [NestJS Queues](https://docs.nestjs.com/techniques/queues)
+Reference: [NestJS Queues](https://docs.nestjs.com/application/queues) · [BullMQ Job Schedulers](https://docs.bullmq.io/guide/job-schedulers)

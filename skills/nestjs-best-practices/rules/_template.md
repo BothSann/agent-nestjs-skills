@@ -1,7 +1,7 @@
 ---
 title: Rule Title Here
 impact: MEDIUM
-impactDescription: Optional description of impact (e.g., "20-50% improvement")
+impactDescription: Optional description of impact (e.g., "Prevents N+1 queries on list endpoints"). Do not invent numbers; only cite measured figures with a source.
 tags: tag1, tag2
 ---
 

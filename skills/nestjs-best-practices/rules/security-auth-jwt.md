@@ -7,7 +7,7 @@ tags: security, jwt, authentication, tokens
 
 ## Implement Secure JWT Authentication
 
-Use `@nestjs/jwt` with `@nestjs/passport` for authentication. Store secrets securely, use appropriate token lifetimes, implement refresh tokens, and validate tokens properly. Never expose sensitive data in JWT payloads.
+For new apps, start with the official `@nestjs/authentication` package: it ships password hashing (scrypt), sessions, JWT bearer tokens, refresh token rotation with reuse detection, and MFA (see the docs link below). If you build it yourself with `@nestjs/jwt` and `@nestjs/passport`, follow this rule. Store secrets securely, use appropriate token lifetimes, implement refresh tokens, and validate tokens properly. Never expose sensitive data in JWT payloads.
 
 **Incorrect (insecure JWT implementation):**
 
@@ -83,7 +83,7 @@ export class AuthService {
       sub: user.id,
       email: user.email,
       roles: user.roles,
-      iat: Math.floor(Date.now() / 1000),
+      // iat and exp are added by jwtService.sign(); do not set them by hand
     };
 
     const accessToken = this.jwtService.sign(payload);
@@ -92,17 +92,46 @@ export class AuthService {
     return { accessToken, refreshToken, expiresIn: 900 };
   }
 
-  private async createRefreshToken(userId: string): Promise<string> {
-    const token = randomBytes(32).toString('hex');
-    const hashedToken = await bcrypt.hash(token, 10);
+  private async createRefreshToken(userId: string, familyId = randomUUID()): Promise<string> {
+    // 256 random bits. Store only a SHA-256 hash: it can be looked up, and a stolen
+    // DB copy cannot be replayed. (bcrypt is for passwords: salted, so no lookup.)
+    const token = randomBytes(32).toString('base64url');
 
     await this.refreshTokenRepo.save({
       userId,
-      token: hashedToken,
+      familyId,
+      tokenHash: createHash('sha256').update(token).digest('hex'),
       expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+      usedAt: null,
     });
 
     return token;
+  }
+
+  // Rotate on every use. A token used twice means it was stolen: revoke its whole family.
+  async refresh(token: string): Promise<TokenResponse> {
+    const hash = createHash('sha256').update(token).digest('hex');
+    const stored = await this.refreshTokenRepo.findOne({ where: { tokenHash: hash } });
+
+    if (!stored || stored.expiresAt < new Date()) {
+      throw new UnauthorizedException();
+    }
+    // Mark used only if still unused, in one statement, so two parallel calls cannot both win
+    const { affected } = await this.refreshTokenRepo.update(
+      { id: stored.id, usedAt: IsNull() },
+      { usedAt: new Date() },
+    );
+    if (!affected) {
+      await this.refreshTokenRepo.delete({ familyId: stored.familyId });
+      throw new UnauthorizedException();
+    }
+
+    const user = await this.usersService.findById(stored.userId);
+    return {
+      accessToken: this.jwtService.sign({ sub: user.id, roles: user.roles }),
+      refreshToken: await this.createRefreshToken(user.id, stored.familyId),
+      expiresIn: 900,
+    };
   }
 }
 

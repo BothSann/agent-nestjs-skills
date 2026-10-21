@@ -80,8 +80,9 @@ export class OrdersService {
     try {
       await this.processOrder(event);
     } catch (error) {
-      this.logger.error('Failed to process order', { event, error });
-      // Don't rethrow - would crash the process
+      this.logger.error(`Failed to process order ${event.orderId}`, error instanceof Error ? error.stack : String(error));
+      // @OnEvent swallows errors by default (suppressErrors: true), so without
+      // this catch the failure is only logged and the work is lost. Park it for a retry.
       await this.deadLetterQueue.add('order.created', event);
     }
   }
@@ -104,22 +105,25 @@ export class CleanupService {
   }
 }
 
-// Global unhandled rejection handler in main.ts
+// Last safety net in main.ts. An unknown error means the process may be in a bad state,
+// so log it, close cleanly, and exit. The orchestrator (Kubernetes, PM2, systemd) restarts it.
+// Do not log and keep running.
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const logger = new Logger('Bootstrap');
+  app.enableShutdownHooks();
+  const logger = new Logger('Process');
 
-  process.on('unhandledRejection', (reason, promise) => {
-    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-  });
-
-  process.on('uncaughtException', (error) => {
-    logger.error('Uncaught Exception:', error);
-    process.exit(1);
-  });
+  const crash = (kind: string) => (error: unknown) => {
+    logger.error(`${kind}, shutting down`, error instanceof Error ? error.stack : String(error));
+    // Exit even if close() hangs
+    setTimeout(() => process.exit(1), 10_000).unref();
+    app.close().finally(() => process.exit(1));
+  };
+  process.on('unhandledRejection', crash('Unhandled rejection'));
+  process.on('uncaughtException', crash('Uncaught exception'));
 
   await app.listen(3000);
 }
 ```
 
-Reference: [Node.js Unhandled Rejections](https://nodejs.org/api/process.html#event-unhandledrejection)
+Reference: [Node.js Unhandled Rejections](https://nodejs.org/api/process.html#event-unhandledrejection) · [Node.js Best Practices: exit the process gracefully on unknown errors](https://github.com/goldbergyoni/nodebestpractices/blob/master/sections/errorhandling/shuttingtheprocess.md) · [NestJS Events](https://docs.nestjs.com/application/events)
