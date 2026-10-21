@@ -1,181 +1,34 @@
 # NestJS Best Practices
 
-## I am back to NestJS, and have a few hours a week to get back to maintaining my few OSS repos. Sorry for the delay all! 
+An agent skill with 54 NestJS rules in 11 sections, ranked by impact. Each rule has a wrong and a right code example, checked against the NestJS 12 docs.
 
-📖 [For Humans <3](https://kadajett.github.io/agent-nestjs-skills/)
-
-A structured repository for creating and maintaining NestJS Best Practices optimized for agents and LLMs.
-
----
-
-<div align="center">
-  <a href="https://semfora.ai">
-    <img src="assets/semfora-logo.svg" alt="Semfora" width="380">
-  </a>
-</div>
-
-> **From the maintainer:** I built this skill because agents write better NestJS when they can see real context. Context is also my day job: I founded [Semfora](https://semfora.ai), a semantic code analysis engine that hands coding agents call graphs, module maps, and change blast radius through nine MCP tools.
->
-> Semfora launches on [Product Hunt on Tuesday, July 28](https://www.producthunt.com/products/semfora?launch=semfora). Support there on launch day means a lot.
-
----
-
-## Installation
-
-Install this skill using [skills](https://github.com/vercel-labs/skills):
+## Install
 
 ```bash
-# GitHub shorthand
-npx skills add Kadajett/agent-nestjs-skills
-
-# Install globally (available across all projects)
-npx skills add Kadajett/agent-nestjs-skills --global
-
-# Install for specific agents
-npx skills add Kadajett/agent-nestjs-skills -a claude-code -a cursor
+npx skills add BothSann/agent-nestjs-skills            # this project
+npx skills add BothSann/agent-nestjs-skills --global   # all projects
 ```
 
-### Supported Agents
+Works with Claude Code, Cursor, Codex, OpenCode, and other agents supported by [skills](https://github.com/vercel-labs/skills).
 
-- Claude Code
-- OpenCode
-- Codex
-- Cursor
-- Antigravity
-- Roo Code
+## Layout
 
-## Structure
+- `skills/nestjs-best-practices/SKILL.md`: entry point and quick reference
+- `skills/nestjs-best-practices/rules/`: one file per rule
+- `AGENTS.md`: generated index, one line per rule (do not edit by hand)
 
-- `skills/nestjs-best-practices/` - The installable skill (this is what `skills add` copies into your project)
-  - `SKILL.md` - Skill entry point and quick reference
-  - `rules/` - Individual rule files (one per rule)
-    - `_sections.md` - Section metadata (titles, impacts, descriptions)
-    - `_template.md` - Template for creating new rules
-    - `area-description.md` - Individual rule files
-- `scripts/` - Build scripts and utilities
-- `metadata.json` - Document metadata (version, organization, abstract)
-- __`AGENTS.md`__ - Generated rule index, kept under 500 lines (one line per rule, links to `rules/`)
+## Add or change a rule
 
-## Getting Started
+1. Copy `rules/_template.md` to `rules/<prefix>-<name>.md`. The prefix sets the section: `arch-`, `di-`, `error-`, `security-`, `perf-`, `test-`, `db-`, `api-`, `micro-`, `devops-`, `ddd-`.
+2. Fill in the frontmatter (`title`, `impact`, `impactDescription`, `tags`), an **Incorrect** and a **Correct** example, and a reference link.
+3. Rebuild the index:
 
-1. Install dependencies:
    ```bash
-   cd scripts && npm install
+   cd scripts && npm install && npm run build
    ```
 
-2. Build AGENTS.md from rules:
-   ```bash
-   npm run build
-   # or
-   ./scripts/build.sh
-   ```
+Impact levels: `CRITICAL`, `HIGH`, `MEDIUM-HIGH`, `MEDIUM`, `LOW-MEDIUM`.
 
-## Creating a New Rule
+## Credits
 
-1. Copy `skills/nestjs-best-practices/rules/_template.md` to `skills/nestjs-best-practices/rules/area-description.md`
-2. Choose the appropriate area prefix:
-   - `arch-` for Architecture (Section 1)
-   - `di-` for Dependency Injection (Section 2)
-   - `error-` for Error Handling (Section 3)
-   - `security-` for Security (Section 4)
-   - `perf-` for Performance (Section 5)
-   - `test-` for Testing (Section 6)
-   - `db-` for Database & ORM (Section 7)
-   - `api-` for API Design (Section 8)
-   - `micro-` for Microservices (Section 9)
-   - `devops-` for DevOps & Deployment (Section 10)
-3. Fill in the frontmatter and content
-4. Ensure you have clear examples with explanations
-5. Run the build script to regenerate AGENTS.md
-
-## Rule File Structure
-
-Each rule file should follow this structure:
-
-```markdown
----
-title: Rule Title Here
-impact: MEDIUM
-impactDescription: Optional description
-tags: tag1, tag2, tag3
----
-
-## Rule Title Here
-
-Brief explanation of the rule and why it matters.
-
-**Incorrect (description of what's wrong):**
-
-```typescript
-// Bad code example
-```
-
-**Correct (description of what's right):**
-
-```typescript
-// Good code example
-```
-
-Optional explanatory text after examples.
-
-Reference: [NestJS Documentation](https://docs.nestjs.com)
-
-
-## File Naming Convention
-
-- Files starting with `_` are special (excluded from build)
-- Rule files: `area-description.md` (e.g., `arch-avoid-circular-deps.md`)
-- Section is automatically inferred from filename prefix
-- Rules are sorted alphabetically by title within each section
-- IDs (e.g., 1.1, 1.2) are auto-generated during build
-
-## Impact Levels
-
-| Level | Description |
-|-------|-------------|
-| CRITICAL | Violations cause runtime errors, security vulnerabilities, or architectural breakdown |
-| HIGH | Significant impact on reliability, security, or maintainability |
-| MEDIUM-HIGH | Notable impact on quality and developer experience |
-| MEDIUM | Moderate impact on code quality and best practices |
-| LOW-MEDIUM | Minor improvements for consistency and maintainability |
-
-## Scripts
-
-- `npm run build` (in scripts/) - Compile rules into AGENTS.md
-
-## Contributing
-
-When adding or modifying rules:
-
-1. Use the correct filename prefix for your section
-2. Follow the `_template.md` structure
-3. Include clear bad/good examples with explanations
-4. Add appropriate tags
-5. Run the build script to regenerate AGENTS.md
-6. Rules are automatically sorted by title - no need to manage numbers!
-
-## Documentation Website
-
-The documentation website source code lives on the [`docs` branch](https://github.com/Kadajett/agent-nestjs-skills/tree/docs/website). This separation keeps the skill installation lightweight while maintaining the full documentation site.
-
-To contribute to the website:
-
-```bash
-git checkout docs
-cd website
-npm install
-npm run dev
-```
-
-## Acknowledgments
-
-- Inspired by the [Vercel React Best Practices](https://github.com/vercel-labs/agent-skills) skill structure
-- Compatible with [skills](https://github.com/vercel-labs/skills) for easy installation across coding agents
-
-## Compatible Agents
-
-These NestJS skills work with:
-
-- [Claude Code](https://claude.ai/code) - Anthropic's official CLI
-- [AdaL](https://sylph.ai/adal) - Self-evolving AI coding agent with MCP support
-
+Forked from [Kadajett/agent-nestjs-skills](https://github.com/Kadajett/agent-nestjs-skills). Structure inspired by [Vercel's agent skills](https://github.com/vercel-labs/agent-skills).
