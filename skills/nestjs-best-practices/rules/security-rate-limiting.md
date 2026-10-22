@@ -116,7 +116,13 @@ providers: [{ provide: APP_GUARD, useClass: UserThrottlerGuard }],
 
 // Behind a proxy or load balancer, req.ip is the proxy's address unless you trust it:
 // app.set('trust proxy', 1); // Express
+// new FastifyAdapter({ trustProxy: 'loopback' }) // Fastify: pass the proxy's address or range
 ```
+
+Behind a proxy on Fastify:
+
+- Do not pass a number such as `trustProxy: 1`. Since Fastify v5.12.1 (installed by `@nestjs/platform-fastify` v12), a number trusts no proxy, so every client behind the proxy shares one limit.
+- Keep the default tracker (`request.ip`). Do not use `req.ips[0]`: on Fastify that is the proxy's address, not the client's.
 
 Note: `ThrottlerGuard` has no documented `getLimit()` method to override. For different limits per plan (free vs paid), use different `@Throttle()` values per route, or check plan quotas in your own guard or service.
 
