@@ -11,6 +11,22 @@ npx skills add BothSann/agent-nestjs-skills --global   # all projects
 
 Works with Claude Code, Cursor, Codex, OpenCode, and other agents supported by [skills](https://github.com/vercel-labs/skills).
 
+## Learn skills (separate)
+
+Three more skills for learning NestJS by building your own app. You type the code; the agent picks tasks, writes lessons, and reviews.
+
+| You say | Skill | What happens |
+|---|---|---|
+| "what should I learn next?" | `nestjs-learn-pick-task` | Scans your app (or empty repo). Offers 3 tasks: scope-doc endpoints or best-practice gaps. Writes `TICKET.md`. |
+| "write the lesson" | `nestjs-learn-write-lesson` | Builds and tests the solution in a Git worktree against its own Postgres database (`<db>_lesson_NN`). Writes the lesson in `learn/`. |
+| "done" / "stuck" / "check" / "ship it" | `nestjs-learn-coach` | Next step, help, review, or gates and PR. |
+
+```bash
+npx skills add BothSann/agent-nestjs-skills --skill nestjs-learn-pick-task --skill nestjs-learn-write-lesson --skill nestjs-learn-coach
+```
+
+They use `nestjs-best-practices` for code quality when it is installed. Each learn skill is self-contained: six shared files are copied into each `references/` folder, so change all three copies together.
+
 ## Layout
 
 - `skills/nestjs-best-practices/SKILL.md`: entry point and quick reference
