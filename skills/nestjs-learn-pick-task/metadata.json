@@ -1,0 +1,10 @@
+{
+  "version": "1.0.0",
+  "organization": "NestJS Learn Skills",
+  "date": "October 2026",
+  "abstract": "Scans a NestJS app (or an empty repo) with a read-only Node script: routes with prefix and version, stubs, tables, migrations, classes, tests, best-practice gaps, and lessons. Compares it with the project's scope doc and offers the owner 3 small tasks to learn from, one marked next. Writes TICKET.md for the pick.",
+  "references": [
+    "https://docs.nestjs.com",
+    "https://github.com/BothSann/agent-nestjs-skills"
+  ]
+}
