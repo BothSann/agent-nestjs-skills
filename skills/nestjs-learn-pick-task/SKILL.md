@@ -4,7 +4,7 @@ description: Scan a NestJS app (or an empty repo) and offer the owner 3 real tas
 license: MIT
 metadata:
   author: thannsopheakboth
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # NestJS Learn: Pick a Task

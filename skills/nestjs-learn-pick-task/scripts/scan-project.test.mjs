@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Tests for scan-project.mjs. Run: node --test skills/nestjs-learn-pick-task/scripts/
+// Tests for scan-project.mjs. Run: node --test skills/nestjs-learn-pick-task/scripts/scan-project.test.mjs
 // Builds a small fake NestJS repo in a temp folder, so the skill ships no fixture files.
 
 import { spawnSync } from 'node:child_process';

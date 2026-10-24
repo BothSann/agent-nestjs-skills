@@ -17,7 +17,9 @@ Turns a picked ticket into a lesson you can follow. The agent builds and tests t
 ```
 nestjs-learn-write-lesson/
 ├── SKILL.md
-├── scripts/lesson-db.mjs       make and check the lesson database; never prints secrets, never drops
+├── scripts/
+│   ├── lesson-db.mjs           make and check the lesson database; never prints secrets, never drops
+│   └── lesson-db.test.mjs      tests, no database needed
 └── references/
     ├── worktree-run.md         worktree, lesson database, build, prove
     ├── readme-template.md
@@ -25,3 +27,11 @@ nestjs-learn-write-lesson/
     ├── check-yourself-template.md
     └── hard-rules.md ...       same 6 files in every nestjs-learn-* skill
 ```
+
+## Test the database helper
+
+```bash
+node --test scripts/lesson-db.test.mjs
+```
+
+The tests use temp folders and never connect to a database.
