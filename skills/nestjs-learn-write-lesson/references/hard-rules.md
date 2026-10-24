@@ -41,7 +41,7 @@ These rules hold in every step of every skill.
 - `npm test -- <pattern>` and `npm run test:e2e`, only when their database target is not the owner's dev database. Check the test config first. When unsure, give the command to the owner.
 - `git status`, `git diff`, `git log`
 - `node <nestjs-learn-pick-task>/scripts/scan-project.mjs` (reads only)
-- curl calls to the owner's local server, when a step says to prove something
+- `GET` and `HEAD` curl calls to the owner's local server, when a step says to prove something. A curl that writes (`POST`, `PUT`, `PATCH`, `DELETE`) saves rows in the owner's dev database: give the command, the owner runs it and pastes the output.
 
 ## Tests
 

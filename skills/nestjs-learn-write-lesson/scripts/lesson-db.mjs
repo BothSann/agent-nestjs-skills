@@ -9,8 +9,8 @@
 //     --shadow also sets SHADOW_DATABASE_URL to <name>_lesson_<NN>_shadow (for Prisma).
 //   node lesson-db.mjs create --worktree-app <dir> [--env DATABASE_URL] [--shadow]
 //     Creates the lesson database (and the shadow one) on the same server. Already there: fine.
-//   node lesson-db.mjs check --worktree-app <dir> [--env DATABASE_URL]
-//     Prints the database name the worktree .env points at, and exits 1 if it is not a lesson database.
+//   node lesson-db.mjs check --worktree-app <dir> [--env DATABASE_URL] [--shadow]
+//     Prints the database name(s) the worktree .env points at, and exits 1 if one is not a lesson database.
 //
 // Only names ending in _lesson_<NN> or _lesson_<NN>_shadow are ever created. This script never drops.
 
@@ -36,13 +36,16 @@ function option(args, name, fallback = null) {
 }
 
 // Minimal .env reader: KEY=value, optional quotes, # comments.
+// Like dotenv: a quoted value ends at its closing quote; an unquoted value ends at the first #.
 function readEnv(path) {
   if (!existsSync(path)) return { lines: [], values: {} };
   const lines = readFileSync(path, 'utf8').split(/\r?\n/);
   const values = {};
   for (const line of lines) {
-    const m = line.match(/^\s*(?:export\s+)?([\w.]+)\s*=\s*(.*)$/);
-    if (m) values[m[1]] = m[2].trim().replace(/^(['"])(.*)\1$/, '$2');
+    const m = line.match(/^\s*(?:export\s+)?([\w.-]+)\s*=\s*(.*)$/);
+    if (!m) continue;
+    const quoted = m[2].match(/^(['"`])(.*?)\1/);
+    values[m[1]] = quoted ? quoted[2] : m[2].replace(/#.*$/, '').trim();
   }
   return { lines, values };
 }

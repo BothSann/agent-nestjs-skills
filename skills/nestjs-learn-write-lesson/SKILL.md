@@ -4,7 +4,7 @@ description: Turn a picked NestJS learning ticket into a full lesson - build and
 license: MIT
 metadata:
   author: thannsopheakboth
-  version: "1.0.0"
+  version: "1.0.1"
 ---
 
 # NestJS Learn: Write the Lesson
@@ -26,7 +26,8 @@ Read these first:
 1. **Read the ticket.** `learn/NN-slug/TICKET.md`. If `status` is not `proposed`, ask why before going on.
 2. **Confirm decisions.** Show the "Decisions" table. Wait for "ok" or changes. Write the answers into the ticket.
 3. **Load the rules.** Follow "Where the rules come from" in `code-quality.md`:
-   - Run the scanner from `nestjs-learn-pick-task` (or reuse its JSON from this session). Take the paths from `qualitySources`.
+   - Run the scanner from `nestjs-learn-pick-task` (or reuse its JSON from this session). Take the paths from `qualitySources`. It sits next to this skill when both are installed: `<skills folder>/nestjs-learn-pick-task/scripts/scan-project.mjs <repo-root> --no-gh`.
+   - Scanner not installed: find the same sources by hand. Use the config fields `rulesDirs`, `skillsDirs`, `guidelines`, `nestDocsPath`, or else the default places in `project-config.md`. List what you found in the GUIDE, and say the scanner was not run.
    - Read **every** project rule file (`qualitySources.rules`) and the guideline files.
    - Read one sibling file of each layer you will touch. Example: the current `auth.controller.ts` before a new controller, and the exception filter before writing error answers.
    - Map the ticket to `nestjs-best-practices` rule files with the table in `code-quality.md`. Read only those.
