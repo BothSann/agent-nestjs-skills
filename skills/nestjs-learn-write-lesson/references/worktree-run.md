@@ -44,7 +44,7 @@ node <this-skill>/scripts/lesson-db.mjs create  --worktree-app <worktree>/<appPa
 node <this-skill>/scripts/lesson-db.mjs check   --worktree-app <worktree>/<appPath> [--env DATABASE_URL] [--shadow]
 ```
 
-1. `prepare` copies the main app's `.env` into the worktree (only when the worktree has none), and sets `databaseUrlEnv` to the same URL with the database renamed. With `--shadow` (Prisma), it also sets `SHADOW_DATABASE_URL` to `<name>_lesson_<NN>_shadow`. It prints the lesson database name.
+1. `prepare` copies the main app's `.env` into the worktree (only when the worktree has none), and sets `databaseUrlEnv` to the same URL with the database renamed. It refuses unless `--worktree-app` is in the linked worktree from step 2: not the main app folder, not a folder inside the main checkout, not a plain folder or another clone. So it can never rewrite the owner's `.env`. With `--shadow` (Prisma), it also sets `SHADOW_DATABASE_URL` to `<name>_lesson_<NN>_shadow`. It prints the lesson database name.
 2. `create` makes the database on the same server, with the app's `pg` package, or with `psql` when `pg` is not installed. Already there is fine. Run it after step 5 installs `node_modules`, so `pg` can be found.
 3. Before any reset (`migration:revert`, `prisma migrate reset`, `DROP SCHEMA`), run `check`. It exits 1 unless the worktree points at a `_lesson_<NN>` database.
 4. If `create` fails with `permission denied` or a login error, stop. Ask the owner to create it once (`createdb shop_lesson_04`) or to give another empty database. Record what was used.

@@ -4,7 +4,7 @@ description: Scan a NestJS app (or an empty repo) and offer the owner 3 real tas
 license: MIT
 metadata:
   author: thannsopheakboth
-  version: "1.0.1"
+  version: "1.0.2"
 ---
 
 # NestJS Learn: Pick a Task
@@ -34,7 +34,8 @@ Read these before you write anything to the owner:
    - endpoints: `endpoints.stubs` and `endpoints.missing`
    - practices: `practices` rows with `missing` or `problem`. Map each with [references/practice-tasks.md](references/practice-tasks.md). Confirm the hint by reading the file in its `evidence` first.
 6. Offer 3. Mark one as **next**. Wait for the owner to pick.
-7. Write `learn/NN-slug/TICKET.md` from [references/ticket-template.md](references/ticket-template.md), with `status: proposed` and the right `kind`.
+7. Picked an existing lesson ("finish" or "start lesson NN")? Do not write a ticket. Hand off as in "After the Owner Picks".
+   New task: write `learn/NN-slug/TICKET.md` from [references/ticket-template.md](references/ticket-template.md), with `status: proposed` and the right `kind`.
 8. Hand off. Tell the owner: say **"write the lesson"** to go on.
 
 ## Usage
@@ -142,6 +143,18 @@ Rules for the offer:
 - "You learn" names real NestJS features, not vague ideas.
 
 ## After the Owner Picks
+
+First check what they picked. Only a new task gets a new number and a new ticket.
+
+| Picked | Do | New folder? |
+|---|---|---|
+| **Finish lesson NN** (`in-progress`) | Open that lesson's `README.md`, "Where you are now". Say the current step. Hand off to `nestjs-learn-coach`: "Say **done**, **stuck**, or **check**." | No |
+| **Start lesson NN** (`proposed`) | Show that lesson's `TICKET.md` "Decisions". Hand off to `nestjs-learn-write-lesson`: "Read the ticket, then say **write the lesson**." | No |
+| A new task | Steps 1–5 below | Yes |
+
+Never write a second ticket for a task that already has a lesson folder.
+
+New task:
 
 1. Folder: `learn/<nextLessonNumber padded to 2>-<kebab-slug>/`.
 2. Write `TICKET.md` from the template. `status: proposed`. `kind`: `scaffold`, `endpoint`, or `practice`.

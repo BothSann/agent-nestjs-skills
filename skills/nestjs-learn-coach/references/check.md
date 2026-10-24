@@ -49,4 +49,4 @@ Quick list. The full rules are in the files `code-quality.md` maps to. Cite the 
 | Errors | no `throw new Error()` for HTTP cases, no swallowed `catch` | `error-throw-http-exceptions.md`, `error-handle-async-errors.md` |
 | Tests | one per criterion and refusal, mocks with `useValue`, `app.close()` | `test-use-testing-module.md`, `test-e2e-supertest.md` |
 
-A finding with no rule behind it is taste. Mark it "optional" or drop it.
+A **Breaks** finding needs a rule, a ticket criterion, or proof you ran (curl, test, `tsc`). With only proof, keep it and put the input and output in the row. A **Style** finding with no rule behind it is taste: mark it "optional" or drop it. See "In a review" in [code-quality.md](code-quality.md).

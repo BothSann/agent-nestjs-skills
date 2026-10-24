@@ -1,5 +1,5 @@
 {
-  "version": "1.4.0",
+  "version": "1.4.1",
   "organization": "NestJS Best Practices",
   "date": "October 2026",
   "abstract": "Comprehensive best practices and architecture guide for NestJS applications, designed for AI agents and LLMs. Contains 54 rules across 11 categories, prioritized by impact from critical (architecture, dependency injection) to incremental (DevOps patterns). Each rule includes detailed explanations, real-world examples comparing incorrect vs. correct implementations, and specific impact metrics to guide automated refactoring and code generation.",

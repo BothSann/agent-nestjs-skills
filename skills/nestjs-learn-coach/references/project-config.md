@@ -35,7 +35,7 @@ Project facts live here, not in the skills. Same skills, any NestJS app.
 
 | Value | Agent may write |
 |---|---|
-| `migrations` | migration files (TypeORM migration class, Prisma or Drizzle SQL migration). Owner still runs them. |
+| `migrations` | migration files: a TypeORM migration class, or a Prisma `migration.sql`. Not Drizzle: there the owner runs `drizzle-kit generate`, so the journal stays right. The owner types the schema change and runs every migration. |
 | `tsdoc` | TSDoc comments in the owner's files, after their code works |
 | `swagger` | `@nestjs/swagger` decorators on DTOs and controllers |
 

@@ -30,15 +30,16 @@ When: a DTO or controller method is done, and `@nestjs/swagger` is installed.
 
 When: a step needs a table, column, or index.
 
-- Write the migration the way the app already does:
+One boundary for every ORM:
+
+- **The owner types the schema change**: the entity, the `schema.prisma` model, or the Drizzle table. That is the lesson. The agent writes it only on "you write it".
+- **The agent writes the migration file**, after the owner's schema matches the worktree's. Compare the two first. If they differ, review with "check" before writing.
 
 | ORM | Agent writes | Owner runs |
 |---|---|---|
-| TypeORM | a migration class in the migrations folder, with `up` and `down` | `npm run migration:run` (or the app's script) |
-| Prisma | the `schema.prisma` change **and** the SQL in `prisma/migrations/<timestamp>_<name>/migration.sql`, the same SQL the worktree proof made | `npx prisma migrate dev` |
-| Drizzle | the schema change and the SQL file in the migrations folder, from the worktree's `drizzle-kit generate` | `npx drizzle-kit migrate` |
-
-- The schema change in an entity or `schema.prisma` that the lesson teaches is the owner's to type. Write only the migration file, unless the owner asks.
+| TypeORM | the migration class from the worktree, in the app's migrations folder, with `up` and `down` | `npm run migration:run` (or the app's script) |
+| Prisma | `prisma/migrations/<timestamp>_<name>/migration.sql` from the worktree (the app's migrations folder, if `prisma.config.ts` moves it). First migration in the app: also `migration_lock.toml`. | `npx prisma migrate dev`. It applies the file, then finds no difference with `schema.prisma`. A difference means the schema and the file do not match: stop and compare. |
+| Drizzle | nothing. `drizzle-kit migrate` runs only SQL files listed in `meta/_journal.json`, and that journal and the snapshot must match the owner's own folder. | `npx drizzle-kit generate` (no database needed: it writes the SQL, journal, and snapshot together), then `npx drizzle-kit migrate`. The agent compares the new SQL with the worktree's. |
 - **Never run the migration.** Give the command. The owner runs it.
 - **Never edit a migration that already ran.** Check the applied list (owner pastes `migration:show` or `prisma migrate status` output). If it ran, write a new migration.
 - After writing, explain each column, index, and default:

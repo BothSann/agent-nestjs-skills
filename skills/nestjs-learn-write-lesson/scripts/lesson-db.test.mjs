@@ -15,13 +15,23 @@ const script = join(here, 'lesson-db.mjs');
 const temp = mkdtempSync(join(tmpdir(), 'lesson-db-'));
 after(() => rmSync(temp, { recursive: true, force: true }));
 
+function git(dir, ...args) {
+  const result = spawnSync('git', ['-C', dir, '-c', 'user.name=test', '-c', 'user.email=test@example.com', ...args], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+}
+
+// A main checkout with one commit, and a linked lesson worktree next to it.
 let count = 0;
 function apps(mainEnv, worktreeEnv) {
   const root = join(temp, String(++count));
   const main = join(root, 'main');
-  const worktree = join(root, 'worktree');
+  const worktree = join(root, 'main-lessons', '04-create-user');
   mkdirSync(main, { recursive: true });
-  mkdirSync(worktree, { recursive: true });
+  git(main, 'init', '-q');
+  writeFileSync(join(main, 'README.md'), 'shop\n');
+  git(main, 'add', 'README.md');
+  git(main, 'commit', '-q', '-m', 'init');
+  git(main, 'worktree', 'add', '-q', '--detach', worktree);
   if (mainEnv !== undefined) writeFileSync(join(main, '.env'), mainEnv);
   if (worktreeEnv !== undefined) writeFileSync(join(worktree, '.env'), worktreeEnv);
   return { main, worktree, env: () => readFileSync(join(worktree, '.env'), 'utf8') };
@@ -108,4 +118,55 @@ test('create refuses the owner database before it connects', () => {
   const r = run('create', '--worktree-app', owner.worktree);
   assert.equal(r.status, 1);
   assert.match(r.err, /refusing/);
+});
+
+// prepare must never write the owner's own .env
+function refuses(main, worktree, reason) {
+  const before = readFileSync(join(main, '.env'), 'utf8');
+  const r = run('prepare', '--main-app', main, '--worktree-app', worktree, '--lesson', '04');
+  assert.equal(r.status, 1, r.out);
+  assert.match(r.err, reason);
+  assert.equal(readFileSync(join(main, '.env'), 'utf8'), before);
+}
+
+test('prepare refuses the same folder, also by another spelling', () => {
+  const a = apps(`DATABASE_URL=${URL_MAIN}\n`);
+  refuses(a.main, a.main, /same folder/);
+  refuses(a.main, join(a.main, '..', 'main', '.'), /same folder/);
+});
+
+test('prepare refuses a folder inside the main checkout', () => {
+  const a = apps(`DATABASE_URL=${URL_MAIN}\n`);
+  const sub = join(a.main, 'apps', 'api');
+  mkdirSync(sub, { recursive: true });
+  refuses(a.main, sub, /inside the main checkout/);
+});
+
+test('prepare refuses a plain folder and a worktree of another repository', () => {
+  const a = apps(`DATABASE_URL=${URL_MAIN}\n`);
+  const plain = join(temp, `plain-${count}`);
+  mkdirSync(plain);
+  refuses(a.main, plain, /inside Git checkouts/);
+  const other = apps(`DATABASE_URL=${URL_MAIN}\n`);
+  refuses(a.main, other.worktree, /not a worktree of the main repository/);
+});
+
+test('prepare refuses a separate clone of the same project', () => {
+  const a = apps(`DATABASE_URL=${URL_MAIN}\n`);
+  const clone = join(temp, `clone-${count}`);
+  assert.equal(spawnSync('git', ['clone', '-q', a.main, clone]).status, 0);
+  refuses(a.main, clone, /not a worktree of the main repository/);
+});
+
+test('prepare accepts an app folder inside the lesson worktree', () => {
+  const a = apps(`DATABASE_URL=${URL_MAIN}\n`);
+  const mainApp = join(a.main, 'apps', 'api');
+  const lessonApp = join(a.worktree, 'apps', 'api');
+  mkdirSync(mainApp, { recursive: true });
+  mkdirSync(lessonApp, { recursive: true });
+  writeFileSync(join(mainApp, '.env'), `DATABASE_URL=${URL_MAIN}\n`);
+  const r = run('prepare', '--main-app', mainApp, '--worktree-app', lessonApp, '--lesson', '04');
+  assert.equal(r.status, 0, r.err);
+  assert.match(readFileSync(join(lessonApp, '.env'), 'utf8'), /\/shop_lesson_04\?/);
+  assert.equal(readFileSync(join(mainApp, '.env'), 'utf8'), `DATABASE_URL=${URL_MAIN}\n`);
 });
