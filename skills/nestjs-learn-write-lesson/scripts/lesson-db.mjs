@@ -9,6 +9,8 @@
 //     --shadow also sets SHADOW_DATABASE_URL to <name>_lesson_<NN>_shadow (for Prisma).
 //     Refuses unless <worktree-app> is in a linked worktree (git worktree add) of the same
 //     repository as <main-app>, outside the main checkout. So it never rewrites the owner's .env.
+//     The worktree .env is replaced by rename, so a symlinked or hard-linked .env is swapped for
+//     its own file instead of being written through.
 //   node lesson-db.mjs create --worktree-app <dir> [--env DATABASE_URL] [--shadow]
 //     Creates the lesson database (and the shadow one) on the same server. Already there: fine.
 //   node lesson-db.mjs check --worktree-app <dir> [--env DATABASE_URL] [--shadow]
@@ -17,9 +19,9 @@
 // Only names ending in _lesson_<NN> or _lesson_<NN>_shadow are ever created. This script never drops.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, realpathSync, renameSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { isAbsolute, join, relative, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 
 const LESSON_NAME = /_lesson_\d{2,}(?:_shadow)?$/;
 
@@ -61,7 +63,24 @@ function setEnv(path, updates) {
     if (i === -1) out.splice(out.length && out[out.length - 1] === '' ? out.length - 1 : out.length, 0, line);
     else out[i] = line;
   }
-  writeFileSync(path, `${out.join('\n').replace(/\n*$/, '')}\n`);
+  writeFileAtomic(path, `${out.join('\n').replace(/\n*$/, '')}\n`);
+}
+
+// Write a new file next to `path`, then rename it over `path`. The rename replaces the
+// directory entry, so a symlink or hard link at `path` is swapped out, never written through.
+function writeFileAtomic(path, text) {
+  const temp = `${path}.${process.pid}.tmp`;
+  writeFileSync(temp, text, { flag: 'wx' });
+  renameSync(temp, path);
+}
+
+function linkInfo(path) {
+  try {
+    const stat = lstatSync(path);
+    return { exists: true, linked: stat.isSymbolicLink() || stat.nlink > 1 };
+  } catch {
+    return { exists: false, linked: false };
+  }
 }
 
 function dbName(url) {
@@ -105,8 +124,10 @@ function checkIsolated(mainApp, worktreeApp) {
   if (!main || !lesson) fail('refusing: both folders must be inside Git checkouts');
   const [mainTop, mainCommon] = main;
   const [lessonTop, lessonCommon, lessonGitDir] = lesson;
+  // Outside means the first path segment is exactly `..` (a folder named `..lessons` is inside).
   const inside = relative(mainTop, lessonTop);
-  if (!inside || (!inside.startsWith('..') && !isAbsolute(inside))) fail('refusing: --worktree-app is inside the main checkout');
+  const outside = isAbsolute(inside) || inside.split(sep)[0] === '..';
+  if (!outside) fail('refusing: --worktree-app is inside the main checkout');
   if (lessonCommon !== mainCommon) fail('refusing: --worktree-app is not a worktree of the main repository');
   if (lessonGitDir === lessonCommon) fail('refusing: --worktree-app is not a linked worktree (make it with git worktree add)');
 }
@@ -129,9 +150,12 @@ function prepare(args) {
   const name = `${base}_lesson_${lesson}`;
 
   const target = join(worktreeApp, '.env');
-  if (!existsSync(target) && existsSync(join(mainApp, '.env'))) {
-    writeFileSync(target, readFileSync(join(mainApp, '.env')));
+  const before = linkInfo(target);
+  if (!before.exists) {
+    writeFileAtomic(target, readFileSync(join(mainApp, '.env')));
     log(`copied .env into the worktree (contents not shown)`);
+  } else if (before.linked) {
+    log('the worktree .env is a link; replacing it with its own file, so the linked file stays unchanged');
   }
   const updates = { [key]: withDb(mainUrl, name) };
   if (args.includes('--shadow')) updates.SHADOW_DATABASE_URL = withDb(mainUrl, `${name}_shadow`);

@@ -4,7 +4,7 @@ description: Turn a picked NestJS learning ticket into a full lesson - build and
 license: MIT
 metadata:
   author: thannsopheakboth
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # NestJS Learn: Write the Lesson
