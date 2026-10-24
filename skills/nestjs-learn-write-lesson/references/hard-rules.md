@@ -36,6 +36,8 @@ These rules hold in every step of every skill.
 
 ## Fine to run (read-only)
 
+Commands below use npm as an example. Resolve the project's actual commands with [project-config.md](project-config.md), "Commands follow the project". A script is read-only only after checking what it runs, including nested scripts.
+
 - `npx tsc --noEmit --incremental false -p tsconfig.json` in the owner's app. Keep `--incremental false`: a new Nest app has `"incremental": true` in `tsconfig.json`, and then `tsc` writes a `.tsbuildinfo` file even with `--noEmit`.
 - `npm run lint` **without** `--fix`, when the lint script has no `--fix` in it. Check `package.json` first.
 - `npm test -- <pattern>` and `npm run test:e2e`, only when their database target is not the owner's dev database. Check the test config first. When unsure, give the command to the owner.
@@ -51,6 +53,6 @@ These rules hold in every step of every skill.
 
 ## Say what is proven
 
-- The lesson solution counts as proven only when it ran in its worktree against the lesson database. Record the starting commit, commands, results, and anything not run in the lesson docs.
+- The lesson solution counts as proven only when it ran in its worktree. When the lesson uses persistence, it must use the lesson database. For a pure domain or wiring lesson that needs no database, record the database as not applicable; do not create one just for proof. Record the starting commit, commands, results, and anything not run in the lesson docs.
 - The owner's code counts as proven only when the owner's own run gives the right output.
 - If something was not run, say so plainly.

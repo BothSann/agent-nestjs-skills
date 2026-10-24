@@ -9,14 +9,15 @@ Read-only checks:
 | Field | How to find it |
 |---|---|
 | `appPath` | Folder whose `package.json` has `@nestjs/core`. Check `.`, `apps/api`, `api`, `backend`, `server`. None: the repo is empty, use `.`. |
-| `buildOrderDoc` | A doc in `docs/` with a table of `GET` / `POST` rows. Grep `\| GET \|`. |
+| `buildOrderDoc` | A doc in `docs/` with a "Build order" list or milestone checklists such as `- [ ] **T-02** ...`. Keep the project's existing plan format. |
+| `endpointDocs` | Separate requirement docs containing endpoint tables or backticked `METHOD /path` pairs. Do not require the task plan to repeat every endpoint. |
 | `rulesDirs` | `.claude/rules/`, `.cursor/rules/` in the repo root or the app. |
-| `packageManager` | The lockfile: `pnpm-lock.yaml`, `yarn.lock`, `package-lock.json`. |
+| `packageManager` | Project rules, then app/root `package.json` `packageManager`, then `bun.lock` / `bun.lockb`, `pnpm-lock.yaml`, `yarn.lock`, or `package-lock.json`. |
 | `orm` | `package.json`: `@prisma/client`, `drizzle-orm`, `typeorm`, `@mikro-orm/core`. |
 | `migrationCommand` | `package.json` scripts with `migration` or `migrate` in the name. Prisma: `npx prisma migrate deploy`. Drizzle: `npx drizzle-kit migrate`. |
 | `generator` | `npx nest g` (or `pnpm nest g`) when `@nestjs/cli` is in `devDependencies`. |
 | `baseBranch` | `git symbolic-ref refs/remotes/origin/HEAD` |
-| `gates` | `lint`, `build`, `test`, `test:e2e` scripts in `package.json`. Only scripts that exist. |
+| `gates` | Project-required commands and existing scripts. Prefer the required aggregate `check` plus `build` when present; inspect what `check` runs. Use `bun run` for Bun, including Vitest tests. |
 | `baseUrl` | `main.ts`: port in `app.listen(...)`, `setGlobalPrefix(...)`, and versioning. Example: `http://localhost:3000/api/v1`. |
 | `nestDocsPath` | Ask. Many owners have no local clone; then leave it out. |
 | `shell` | Windows: `powershell`. Else `bash`. |
@@ -56,7 +57,7 @@ The scan says `no_nest_app` (and maybe `no_commits`).
 
 ## No scope doc?
 
-The scanner needs a list of endpoints to find what is missing. Without one, offer only practice tasks, or draft the doc first.
+The scanner needs a list of endpoints to find which endpoints are missing. Without one, use the existing milestone plan and practice hints, or draft an endpoint scope doc first. Do not replace a project task plan just because it is not an endpoint table.
 
 - Offer to draft `docs/api-scope.md` with the owner: a table per area with `Method | Path | Auth | Does`, and a "Build order" numbered list.
 - Use the full path the app answers on, with prefix and version: `/api/v1/users`, not `/users`.

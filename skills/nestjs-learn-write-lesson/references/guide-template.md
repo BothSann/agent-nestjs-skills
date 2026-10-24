@@ -2,6 +2,8 @@
 
 The long file. Each step: **what, why, how, the code, the words, a check.**
 
+Adapt npm examples to the project's package manager and scripts (see `project-config.md`). Every read-only compiler check must disable incremental output, for example `bun run tsc --noEmit --incremental false -p tsconfig.json` in a Bun project. Pure domain lessons use plain runner tests and need no database; write "not applicable" in the proof section.
+
 ```markdown
 # Guide: create user
 
@@ -73,7 +75,7 @@ File: `src/users/users.service.ts`
 
 **Check.**
 
-    npx tsc --noEmit
+    npx --no-install tsc --noEmit --incremental false -p tsconfig.json
 
 You should see no output. (The route is wired in step 7, so no curl yet.)
 ```
@@ -84,7 +86,7 @@ You should see no output. (The route is wired in step 7, so no curl yet.)
 - In each step, the **Why** names the rule when one drove the choice.
 - Start from plain TypeScript. Then show what Nest adds.
 - Open the magic once. Examples: show the SQL a repository call runs (TypeORM `logging: true`, Prisma `log: ['query']`, in the lesson worktree), or show that Nest makes the service only once.
-- One check per step. Best is `npx tsc --noEmit`, a startup log line, a curl, or one test.
+- One check per step. Use the installed compiler with `--noEmit --incremental false`, a startup log line, a curl, or one test, through the project's package manager.
 - A check must pass using only the steps done so far. Bad: step 6 (service) says curl gives 201, but the controller is step 7.
 - Code in this template is shape only. Copy the real shape from the sibling files. Example: if other services throw a custom `AppException`, a new service does the same.
 - If proof showed an existing test breaks, explain the fix with the before and after line. The agent writes tests in the owner's app only when asked.

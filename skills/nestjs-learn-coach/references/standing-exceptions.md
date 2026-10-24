@@ -55,11 +55,11 @@ One boundary for every ORM:
 
 When: the owner says "check, write test" or asks for tests. One ask covers that lesson only.
 
-- Unit tests next to the file (`users.service.spec.ts`) with `Test.createTestingModule` and `useValue` mocks.
+- Unit tests next to the file (`users.service.spec.ts`). Nest providers use `Test.createTestingModule` and `useValue` fakes; pure domain classes use plain tests with no Nest container. Use the project's runner helpers (`vi` for Vitest).
 - E2E tests in `test/` with `supertest`, using the app's real setup.
 - Follow the project's testing rules if present.
 - One test per acceptance criterion, plus the rare cases in the ticket.
-- Run unit tests: `npm test -- users.service`. Run e2e tests only when their database is not the owner's dev database; otherwise give the command. Report pass or fail with output.
+- Run the project's unit-test script with the file filter (for example `bun run test users.service` for Bun/Vitest). Run e2e tests only when their database is not the owner's dev database; otherwise give the command. Report pass or fail with output.
 
 ## "you write it" — one named item
 

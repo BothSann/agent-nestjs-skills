@@ -12,7 +12,7 @@ tags: security, helmet, headers, cors, csrf
 Three browser protections, all set once in `main.ts`, right after `NestFactory.create()`:
 
 - **Security headers** (`Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options`, ...) turn on browser defenses. Since NestJS v12.1, `app.useSecurityHeaders()` sets the Helmet 8 defaults on Express and Fastify with no extra package. On older versions, use the `helmet` package.
-- **CORS** decides which other sites may read your API's responses. Never reflect every origin while allowing credentials.
+- **CORS** decides which other sites may read your API's responses. Leave it disabled when no cross-origin browser client needs access (for example an API-to-API service). Missing `enableCors()` alone is not a security defect. When enabled, follow the project's origin allowlist; never reflect every origin while allowing credentials.
 - **CSRF** stops another site from making a signed-in user's browser send a state-changing request. Since v12.1, `app.enableCsrfProtection()` rejects cross-origin `POST`/`PUT`/`PATCH`/`DELETE` using the browser's `Sec-Fetch-Site` and `Origin` headers. You need it when you authenticate with cookies. Pure bearer-token APIs are not exposed to CSRF, but the check does no harm: non-browser clients send neither header and are let through.
 
 **Incorrect (open CORS with credentials, no headers, cookie auth without CSRF):**

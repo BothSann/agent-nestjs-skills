@@ -32,7 +32,7 @@ Read these first:
    - Read one sibling file of each layer you will touch. Example: the current `auth.controller.ts` before a new controller, and the exception filter before writing error answers.
    - Map the ticket to `nestjs-best-practices` rule files with the table in `code-quality.md`. Read only those.
    - Check version-sensitive calls in the docs (`nestDocsPath` clone, else docs.nestjs.com) and in the installed `.d.ts` files.
-4. **Prepare the worktree, lesson database, and baseline.** Follow [references/worktree-run.md](references/worktree-run.md). Record the starting commit, account for uncommitted changes, make the lesson database with [scripts/lesson-db.mjs](scripts/lesson-db.mjs), point every config at it, and run baseline tests before building.
+4. **Prepare the worktree and baseline.** Follow [references/worktree-run.md](references/worktree-run.md). Record the starting commit and account for uncommitted changes. If the lesson uses persistence, make its database with [scripts/lesson-db.mjs](scripts/lesson-db.mjs) and point every database config at it; otherwise record the database as not applicable. Run baseline tests before building.
 5. **Build and prove the solution there.** Write the complete code and tests in the worktree. Prove every criterion and run the gates there. Never use the owner's database. See "Solution rules" below.
 6. **Rule pass.** Read the diff again against every rule file from step 3. Fix, then prove again. See "Rule pass" in `code-quality.md`.
 7. **Write the lesson files:**
@@ -44,11 +44,13 @@ Read these first:
 
 ## Solution rules
 
+- Resolve every command with `references/project-config.md`, "Commands follow the project". Use the project's scripts, package manager, and test runner; npm snippets below are examples. A Bun/Vitest project runs `bun run test`, never `bun test`.
+
 - Work at the real app paths inside `<lessonWorktreesPath>/NN-slug/`. No `ref/` folder or second proof copy.
 - Follow every project rule, then `nestjs-best-practices`, in the order in `code-quality.md`. The project rule wins a clash. Write each clash down in the GUIDE.
 - Code a senior NestJS dev would merge. Not a short demo. The owner copies what they see.
 - Strict types: no `any`, DTO classes for every body, response DTOs for every answer shape.
-- Tests: one per acceptance criterion and per decision in the code. Unit tests with `Test.createTestingModule`. E2E tests with `supertest` against the lesson database, using the same app setup as `main.ts`.
+- Tests: one per acceptance criterion and per decision in the code. Use `Test.createTestingModule` for Nest providers; test pure domain classes directly with the project's runner. E2E tests use `supertest` and the same app setup as `main.ts`. Use the lesson database when persistence is involved; otherwise record it as not applicable.
 - Use the same generators the owner will use, run from the app folder inside the worktree. The guide gives the exact `generator` command and shows the tested final code.
 - Only the files this ticket needs. No extras "for later".
 - Migrations: write and run them in the worktree. The owner types the schema change (entity, `schema.prisma` model, Drizzle table) in their app. Then, only when `standingExceptions` has `migrations` and the owner confirms, the agent writes the same TypeORM or Prisma migration file there. Drizzle: the guide has the owner run `npx drizzle-kit generate` instead, so the journal stays right. The owner runs every migration.

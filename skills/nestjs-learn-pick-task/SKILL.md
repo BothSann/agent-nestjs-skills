@@ -25,13 +25,15 @@ Read these before you write anything to the owner:
 
 1. Check for `learn/learn.config.json` at the repo root.
    - Missing: follow [references/first-run.md](references/first-run.md). Stop until it exists.
+   - Read-only skill evaluation: an external config may be passed with `--config=<file>` instead. Keep trial results in scratch space; do not write lessons into the target repo.
 2. Run the scanner. Save JSON to the scratchpad, not the repo.
 3. Handle blockers (table below).
    - `summary.staleLessons` not empty: that lesson's PR is already merged, but `TICKET.md` still says `proposed` or `in-progress`. Say so ("Lesson 04: PR #6 merged"). Ask the owner to confirm, then set `status: done`. Never offer "finish lesson NN" for it.
-4. Read the scan JSON and the `buildOrderDoc` "Build order" section. Nothing else yet.
-5. Build the candidate list from three sources, and rank it with [references/scoring.md](references/scoring.md):
+4. Read the scan JSON and `buildOrderDoc`: its "Build order" section or milestone task checklists. Project task order and prerequisites come before generic scores.
+5. Build the candidate list from these sources, and rank it with [references/scoring.md](references/scoring.md):
    - the scaffold lesson, when `no_nest_app`
    - endpoints: `endpoints.stubs` and `endpoints.missing`
+   - plan tasks: the earliest unfinished `planTasks` entry; split a large task into one teachable slice without jumping ahead of its prerequisites
    - practices: `practices` rows with `missing` or `problem`. Map each with [references/practice-tasks.md](references/practice-tasks.md). Confirm the hint by reading the file in its `evidence` first.
 6. Offer 3. Mark one as **next**. Wait for the owner to pick.
 7. Picked an existing lesson ("finish" or "start lesson NN")? Do not write a ticket. Hand off as in "After the Owner Picks".
@@ -49,6 +51,7 @@ node <this-skill-dir>/scripts/scan-project.mjs <repo-root> > <scratchpad>/scan.j
 **Arguments:**
 - `<repo-root>` — the folder with `learn/` (defaults to the current folder)
 - `--no-gh` — skip `gh pr list`. Then stale lessons are not found. The scan asks GitHub because remote branches are often deleted after merge.
+- `--config=<file>` — use an external JSON config without creating `learn/` in the target. Config paths still refer to the target repo. A missing or invalid explicit config exits with an error.
 
 The scanner is read-only. It reads files with text search. It never starts the app, runs `npm`, or opens a database.
 Logs go to stderr. JSON goes to stdout.
@@ -79,6 +82,7 @@ Main keys (full list in the script):
 | `tests` | unit and e2e spec files and test counts. `unit.onlyDefault`: only the generated `app.controller.spec.ts` |
 | `practices` | best-practice hints: `id`, `rule` (a `nestjs-best-practices` rule file), `status` (`ok`, `missing`, `problem`, `n/a`), `evidence`, `note` |
 | `buildOrder` | numbered list under the "Build order" heading of `buildOrderDoc` |
+| `planTasks` | ID-tagged milestone checklist entries (for example `- [ ] **T-02** ...`) with `id`, `title`, `done`, and `section`; these are doc claims, not proof the code works |
 | `endpoints.done` / `.stubs` / `.missing` | doc endpoints split by what the routes show |
 | `lessons` | `learn/NN-*` folders with `status`, `kind`, `branch`, plus `mergedPr` when a merged PR matches |
 | `qualitySources` | project rule files, the `nestjs-best-practices` skill (path, version, rule count), guideline files, `nestDocs` |
@@ -98,15 +102,19 @@ Short example:
 A **stub** is a route that exists but does no real work: it throws `NotImplementedException`, or it (or the service method it calls) returns the `This action adds a new user` text that `nest g resource` writes.
 It counts as not built. It is often the best next task: small, and the route is already there.
 
+Endpoint docs are read as text, not a full specification language. The scanner reads explicit `METHOD /path` pairs and method/path table rows, skips fenced examples, and removes duplicates. It does not infer a path from shorthand such as "`GET` lists webhooks". Check the relevant requirement before claiming the endpoint list is complete.
+
 ## Blockers
 
 | Blocker | Do this |
 |---|---|
 | `no_config` | Follow [references/first-run.md](references/first-run.md). |
 | `no_git` | Ask the owner to run `git init`. Lesson worktrees need git. |
+| `git_unavailable` | Git inspection failed or was denied. Check executable access and repo permissions, or rerun with the required access. Do not tell the owner to initialize or recreate an existing repository. |
 | `no_commits` | Worktrees need one commit. Ask the owner to commit something first (even a README). Give the commands. |
 | `no_nest_app` | Empty repo, or `appPath` is wrong. Ask which. Empty: the only first task is the scaffold lesson. Wrong path: fix the config. |
-| `no_build_order_doc` | Fine to go on with practice tasks. Offer to draft a scope doc with the owner (see first-run.md). |
+| `no_build_order_doc` | Use configured endpoint docs and practice hints, but do not claim the build order is known. Offer to draft a plan with the owner (see first-run.md). |
+| `no_endpoint_doc` | A configured `endpointDocs` file could not be read. Fix its path before claiming the endpoint list is complete. |
 | `no_best_practices_skill` | Fine to go on. Say lessons follow project rules and the review rules only. To add it: `npx skills add BothSann/agent-nestjs-skills --skill nestjs-best-practices`. |
 | `router_module_prefixes` | The app uses `RouterModule.register()`. Its prefixes are not read, so route paths may be short. Endpoints are matched on the end of the path. Say so once. |
 

@@ -5,6 +5,10 @@
 The complete solution in the lesson worktree is what the owner learns from. It must be code a senior NestJS dev would merge.
 The same rules are used to review the owner's code on "check".
 
+Use the project's package manager, scripts, and test runner throughout. Resolve commands with [project-config.md](project-config.md), "Commands follow the project"; npm and Jest snippets are examples, not required tools.
+
+For a DDD app, keep domain tests plain TypeScript with the project's test runner. Use `Test.createTestingModule()` for Nest providers and wiring, not aggregates or value objects. Keep business rules in the domain and map domain errors at the HTTP boundary. Do not add a database, auth endpoint, or browser CORS just to satisfy a generic example.
+
 ## Where the rules come from
 
 Read them in this order. **When two disagree, the higher one wins.**

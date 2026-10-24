@@ -27,6 +27,8 @@ Tests in the owner's app are not required unless the owner asked for them in thi
 
 ## 2. Gates
 
+Use the project's actual package manager and scripts (`project-config.md`, "Commands follow the project"). For example, a Bun app whose rules require `check` and `build` uses `bun run check` and `bun run build`; keep Vitest behind its test script.
+
 Every command in `gates` from config, from `appPath`. Example:
 
 ```bash

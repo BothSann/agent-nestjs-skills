@@ -2,6 +2,8 @@
 
 Use one separate Git worktree for both building and proof. Keep docs in the main repo's `learn/NN-slug/`. Commands below are examples: resolve paths from config and use the owner's shell.
 
+Use the project's package manager, scripts, and runner for every command here; see [project-config.md](project-config.md), "Commands follow the project". Do not substitute npm for a Bun project or use `bun test` for Vitest. An existing `dev` script may replace the `start:dev` examples.
+
 ## 1. Record the starting state
 
 Read the main repo's `git status --short` and `git rev-parse HEAD`. Use its current commit as the lesson baseline; `baseBranch` stays the owner's shipping target. If the ticket needs another starting point, settle that with the owner before building.
@@ -33,6 +35,8 @@ npx @nestjs/cli@latest new . --package-manager <packageManager> --skip-git --str
 `--skip-git` stops it from making a nested repo. Record the CLI version it used. Use that version in the guide.
 
 ## 3. Make the lesson database
+
+If this ticket is pure domain logic or module wiring with no database use, record "database: not applicable" and skip database creation and migration steps. Run the relevant tests without adding database setup. Keep isolation checks for any other services the lesson actually uses.
 
 Lesson database name: `<owner's database name>_lesson_<NN>`. Example: `shop_lesson_04`. See `project-config.md`.
 
@@ -95,6 +99,7 @@ Install with the lockfile, only in the worktree:
 | npm | `npm ci --ignore-scripts` |
 | pnpm | `pnpm install --frozen-lockfile --ignore-scripts` |
 | yarn | `yarn install --immutable --mode=skip-build` (Berry) or `yarn install --frozen-lockfile --ignore-scripts` (v1) |
+| bun | `bun install --frozen-lockfile --ignore-scripts` |
 
 Then run only the setup scripts the app needs, now that the environment points at the lesson database: `npx prisma generate`, native builds such as `bcrypt` (`npm rebuild bcrypt`). Never link or share the main app's `node_modules`.
 
