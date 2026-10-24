@@ -9,7 +9,7 @@ Read-only checks:
 | Field | How to find it |
 |---|---|
 | `appPath` | Folder whose `package.json` has `@nestjs/core`. Check `.`, `apps/api`, `api`, `backend`, `server`. None: the repo is empty, use `.`. |
-| `buildOrderDoc` | A doc in `docs/` with a "Build order" list or milestone checklists such as `- [ ] **T-02** ...`. Keep the project's existing plan format. |
+| `buildOrderDoc` | The project's existing planning doc with a "Build order" list or Markdown checklists. Task IDs are optional. Keep its filename and structure. |
 | `endpointDocs` | Separate requirement docs containing endpoint tables or backticked `METHOD /path` pairs. Do not require the task plan to repeat every endpoint. |
 | `rulesDirs` | `.claude/rules/`, `.cursor/rules/` in the repo root or the app. |
 | `packageManager` | Project rules, then app/root `package.json` `packageManager`, then `bun.lock` / `bun.lockb`, `pnpm-lock.yaml`, `yarn.lock`, or `package-lock.json`. |

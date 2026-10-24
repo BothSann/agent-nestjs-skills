@@ -18,7 +18,7 @@ Three more skills for learning NestJS by building your own app. You type the cod
 | You say | Skill | What happens |
 |---|---|---|
 | "what should I learn next?" | `nestjs-learn-pick-task` | Scans your app (or empty repo). Offers 3 tasks: scope-doc endpoints or best-practice gaps. Writes `TICKET.md`. |
-| "write the lesson" | `nestjs-learn-write-lesson` | Builds and tests the solution in a Git worktree against its own Postgres database (`<db>_lesson_NN`). Writes the lesson in `learn/`. |
+| "write the lesson" | `nestjs-learn-write-lesson` | Builds and tests the solution in a Git worktree, with isolated persistence when needed. Writes the lesson in `learn/`. |
 | "done" / "stuck" / "check" / "ship it" | `nestjs-learn-coach` | Next step, help, review, or gates and PR. |
 
 ```bash
@@ -26,6 +26,8 @@ npx skills add BothSann/agent-nestjs-skills --skill nestjs-learn-pick-task --ski
 ```
 
 They use `nestjs-best-practices` for code quality when it is installed. Each learn skill is self-contained: six shared files are copied into each `references/` folder, so change all three copies together.
+
+The skills adapt to the project's stack and rules: npm, pnpm, Yarn, or Bun; root apps or custom monorepo paths; CRUD or DDD; and the existing runner and database engine. Planning filenames and task IDs are configurable or optional. The bundled database helper supports PostgreSQL only; other engines use their native isolation tools. Scanner results are hints, with manual review for patterns it cannot parse.
 
 ## Layout
 

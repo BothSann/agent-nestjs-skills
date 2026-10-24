@@ -1,12 +1,12 @@
 # nestjs-learn-write-lesson
 
-Turns a picked ticket into a lesson you can follow. The agent builds and tests the complete solution in a separate Git worktree, against its own Postgres database, keeps the docs in your main repo's `learn/`, then gives you one step at a time.
+Turns a picked ticket into a lesson you can follow. The agent builds and tests the complete solution in a separate Git worktree, with isolated persistence only when needed, keeps the docs in your main repo's `learn/`, then gives you one step at a time. It keeps your project's package manager, runner, database engine, and architecture.
 
 ## What it covers
 
 - Confirm the ticket's decisions with you
 - Complete runnable app in `<lessonWorktreesPath>/NN-slug`, at normal app paths. No `ref/` folder or scratch app.
-- A lesson database next to yours, like `shop_lesson_04`. Your database is never touched.
+- When persistence is needed, a separate lesson database or file, like `shop_lesson_04`. Your database is never touched. The bundled helper is PostgreSQL-only; other engines use native tools.
 - Unit and e2e tests and your gates, run in the worktree
 - Code that follows your project rules first, then the `nestjs-best-practices` skill
 - `README.md`, `GUIDE.md`, `check-yourself.md` (quiz, answer under each question)

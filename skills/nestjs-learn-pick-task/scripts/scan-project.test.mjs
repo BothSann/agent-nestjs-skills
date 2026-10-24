@@ -245,7 +245,7 @@ test('an empty repo asks for a commit and the scaffold lesson', () => {
   assert.equal(json.summary.nextLessonNumber, 1);
 });
 
-// Cases found while exercising the skills against malnest (Bun, Vitest, DDD).
+// Cross-project compatibility, including cases found during a real-project trial.
 test('detects Bun from packageManager and both Bun lockfile formats', () => {
   for (const [name, pkg, lock] of [
     ['declared', { packageManager: 'bun@1.4.3' }, 'package-lock.json'],
@@ -290,7 +290,7 @@ test('reads an external config without creating learn files in the target', () =
     'docs/TASK_PLAN.md': '# Task Plan\n\n## M0. Foundation\n\n- [x] **T-01** Planning docs.\n- [ ] **T-02** Modular monolith skeleton.\n\n## M1. Identity\n\n- [ ] **T-07** Drizzle providers.\n',
     'docs/REQUIREMENTS.md': '# Requirements\n\n## Scans\n\n| ID | Requirement | Rules |\n|---|---|---|\n| FR-01 | `POST /v1/scans` queues a scan. | BR-01 |\n| FR-05 | `GET /v1/scans/:id` returns a scan. | BR-04 |\n| FR-22 | `POST /v1/api-keys` creates a key. `GET /v1/api-keys` lists keys. | BR-26 |\n',
   });
-  const configPath = join(temp, 'malnest-learn.config.json');
+  const configPath = join(temp, 'external-learn.config.json');
   writeFileSync(configPath, JSON.stringify({ appPath: '.', buildOrderDoc: 'docs/TASK_PLAN.md', endpointDocs: ['docs/REQUIREMENTS.md'], shell: 'powershell', baseBranch: 'origin/main' }));
   const { json } = scan(root, ['--no-gh', `--config=${configPath}`]);
   assert.equal(json.blockers.includes('no_config'), false);
@@ -331,6 +331,102 @@ test('does not report a missing repository when Git cannot be executed', () => {
   assert.equal(json.blockers.includes('no_git'), false);
   assert.equal(json.blockers.includes('no_commits'), false);
   assert.equal(json.git.hasCommits, null);
+});
+
+test('supports common package managers, ORMs, runners, and configurable app paths', () => {
+  const cases = [
+    { manager: 'npm', version: '11.0.0', lock: 'package-lock.json', app: '.', nest: '^10.4.0', orm: 'typeorm', db: 'typeorm', runner: 'jest', platform: 'express' },
+    { manager: 'pnpm', version: '10.0.0', lock: 'pnpm-lock.yaml', app: 'services/http', nest: '^11.0.0', orm: 'prisma', db: '@prisma/client', runner: 'vitest', platform: 'fastify' },
+    { manager: 'yarn', version: '4.0.0', lock: 'yarn.lock', app: 'packages/backend', nest: '^12.0.0', orm: 'drizzle', db: 'drizzle-orm', runner: 'jest', platform: 'express' },
+    { manager: 'bun', version: '1.4.0', lock: 'bun.lock', app: '.', nest: '^12.0.0', orm: 'mongoose', db: '@nestjs/mongoose', runner: 'vitest', platform: 'fastify' },
+  ];
+  for (const c of cases) {
+    const sourceRoot = c.app === '.' ? 'src' : 'source';
+    const appPkg = { dependencies: { '@nestjs/core': c.nest, [`@nestjs/platform-${c.platform}`]: c.nest, [c.db]: '*' }, scripts: { test: c.runner === 'vitest' ? 'vitest run' : 'jest', serve: 'nest start' } };
+    const rootPkg = { packageManager: `${c.manager}@${c.version}`, devDependencies: { [c.runner]: '*' } };
+    const root = makeRepo(`compat-${c.manager}`, {
+      'package.json': JSON.stringify(c.app === '.' ? { ...rootPkg, ...appPkg } : rootPkg),
+      ...(c.app === '.' ? {} : { [`${c.app}/package.json`]: JSON.stringify(appPkg) }),
+      [c.lock]: '',
+      [`${c.app}/${sourceRoot}/health.controller.ts`]: "@Controller('health')\nexport class HealthController {\n @Get()\n check() { return { ok: true }; }\n}\n",
+      'learn/learn.config.json': JSON.stringify({ appPath: c.app, sourceRoot }),
+    });
+    const { json } = scan(root);
+    assert.equal(json.app.nestApp, true, c.manager);
+    assert.equal(json.app.path, c.app, c.manager);
+    assert.equal(json.app.sourceRoot, sourceRoot);
+    assert.deepEqual(short(json.routes), ['GET /health']);
+    assert.equal(json.stack.nestVersion, c.nest);
+    assert.equal(json.stack.packageManager, c.manager);
+    assert.equal(json.stack.orm, c.orm);
+    assert.equal(json.stack.testRunner, c.runner);
+    assert.equal(json.stack.platform, c.platform);
+  }
+});
+
+test('detects workspace test tooling without imposing a different runner', () => {
+  const root = makeRepo('workspace-test-tooling', {
+    'package.json': JSON.stringify({ packageManager: 'pnpm@10.0.0', devDependencies: { vitest: '*' } }),
+    'services/backend/package.json': JSON.stringify({ dependencies: { '@nestjs/core': '*' } }),
+    'learn/learn.config.json': JSON.stringify({ appPath: 'services/backend' }),
+  });
+  assert.equal(scan(root).json.stack.testRunner, 'vitest');
+  const app = join(root, 'services/backend/package.json');
+  writeFileSync(app, JSON.stringify({ dependencies: { '@nestjs/core': '*' }, scripts: { test: 'node --test' } }));
+  assert.equal(scan(root).json.stack.testRunner, 'node');
+});
+
+test('preserves native Bun tests and explicit custom test-runner choices', () => {
+  const root = makeRepo('custom-runner', {
+    'package.json': JSON.stringify({ packageManager: 'bun@1.4.0', dependencies: { '@nestjs/core': '*' }, scripts: { test: 'bun test' } }),
+    'learn/learn.config.json': JSON.stringify({ appPath: '.' }),
+  });
+  assert.equal(scan(root).json.stack.testRunner, 'bun');
+  writeFileSync(join(root, 'learn/learn.config.json'), JSON.stringify({ appPath: '.', testRunner: 'custom' }));
+  assert.equal(scan(root).json.stack.testRunner, 'custom');
+});
+
+test('reads ordinary checklists and varied task IDs without requiring a milestone naming scheme', () => {
+  const root = makeRepo('ordinary-roadmap', {
+    ...FILES,
+    'docs/scope.md': '# Roadmap\n\n#### Foundation\n- [x] Set up the API\n+ [ ] Add request validation\n* [ ] **API-42** Add paging\n- [ ] `OPS-7` Add readiness\n\n##### Later\n- [ ] #123 Add metrics\n',
+  });
+  const { json } = scan(root);
+  assert.deepEqual(json.planTasks.map(({ id, title, done, section }) => ({ id, title, done, section })), [
+    { id: null, title: 'Set up the API', done: true, section: 'Foundation' },
+    { id: null, title: 'Add request validation', done: false, section: 'Foundation' },
+    { id: 'API-42', title: 'Add paging', done: false, section: 'Foundation' },
+    { id: 'OPS-7', title: 'Add readiness', done: false, section: 'Foundation' },
+    { id: '#123', title: 'Add metrics', done: false, section: 'Later' },
+  ]);
+});
+
+test('supports an app with no ORM, no roadmap, and only a custom test runner', () => {
+  const root = makeRepo('minimal-api', {
+    'package.json': JSON.stringify({ packageManager: 'npm@11.0.0', dependencies: { '@nestjs/core': '*' }, scripts: { test: 'custom-test-command' } }),
+  });
+  const { json } = scan(root);
+  assert.equal(json.app.nestApp, true);
+  assert.equal(json.stack.orm, 'none');
+  assert.equal(json.stack.testRunner, null);
+  assert.deepEqual(json.planTasks, []);
+  assert.equal(practice(json, 'migrations').status, 'n/a');
+});
+
+test('recognizes test-file conventions without treating test fixtures as app code', () => {
+  const root = makeRepo('test-conventions', {
+    'package.json': JSON.stringify({ dependencies: { '@nestjs/core': '*' }, scripts: { test: 'node --test' } }),
+    'src/domain/policy.test.ts': "test('policy', () => {});\nconst app = {}; app.enableCors();\n@Controller('fake')\nexport class FakeController {\n@Get()\nfindAll() { return []; }\n}\n",
+    'test/health.e2e.test.ts': "test('health', () => {});\n",
+    'test/worker.e2e.spec.ts': "test('worker', () => {});\n",
+    'test/service.test.js': "test('service', () => {});\n",
+  });
+  const { json } = scan(root);
+  assert.equal(json.tests.unit.testCalls, 2);
+  assert.equal(json.tests.e2e.testCalls, 2);
+  assert.equal(practice(json, 'unit-tests').status, 'ok');
+  assert.equal(practice(json, 'cors').status, 'n/a');
+  assert.deepEqual(json.routes, []);
 });
 
 // The six shared reference files are copied into each nestjs-learn-* skill.

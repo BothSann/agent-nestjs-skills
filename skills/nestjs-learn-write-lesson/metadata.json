@@ -2,7 +2,7 @@
   "version": "1.0.3",
   "organization": "NestJS Learn Skills",
   "date": "October 2026",
-  "abstract": "Turns a NestJS learning ticket into a lesson: the complete solution built and tested in a separate Git worktree against its own Postgres lesson database, following project rules and the nestjs-best-practices skill, plus README, GUIDE, and quiz under learn/ in the main repo. Gives the owner one step at a time.",
+  "abstract": "Turns a NestJS learning ticket into a lesson: the complete solution built and tested in a separate Git worktree with isolated persistence when needed, following project rules and the nestjs-best-practices skill, plus README, GUIDE, and quiz under learn/ in the main repo. Gives the owner one step at a time.",
   "references": [
     "https://docs.nestjs.com",
     "https://github.com/BothSann/agent-nestjs-skills"
