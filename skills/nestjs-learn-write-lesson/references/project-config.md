@@ -1,124 +1,60 @@
-<!-- Same file in all 3 nestjs-learn-* skills. Change the 3 copies together. -->
+<!-- Shared by all three nestjs-learn-* skills; update every copy. -->
+# Project config
 
-# Project config: `learn/learn.config.json`
-
-Project facts live here, not in the skills. Same skills, any NestJS app.
-`learn/` is git-ignored, so the config stays personal.
-
-## Project fit
-
-Use these skills for NestJS projects, including simple CRUD apps, modular monoliths, and monorepos. Do not require DDD, a particular package manager, test runner, ORM, auth scheme, database engine, document name, task-ID format, or folder layout. Examples show shapes to adapt, not a stack to install. Use `appPath` and `sourceRoot` for custom layouts. If automated detection cannot understand the project, report what is unknown and inspect its rules and scripts instead of changing the project to fit the scanner.
+Personal facts: `learn/learn.config.json` at repo root. Preserve existing values. Adapt to any NestJS project: CRUD or DDD, root app or monorepo, existing manager/runner/ORM/auth/engine. Examples are not requirements. If detection fails, inspect project rules/scripts and report unknowns rather than reshaping the app.
 
 ## Fields
+Required: `appPath`, `baseBranch`, `shell`, `baseUrl`. Other fields are optional.
 
-| Field | Required | Means | Example |
-|---|---|---|---|
-| `appPath` | yes | folder with the app's `package.json` and `nest-cli.json`, relative to repo root | `apps/api` or `.` |
-| `sourceRoot` | no | source folder inside `appPath`. Default: `sourceRoot` from `nest-cli.json`, else `src` | `src` |
-| `lessonWorktreesPath` | no | root for lesson worktrees, outside the main repo. Default: sibling `<repo-name>-lessons` | `../shop-lessons` |
-| `buildOrderDoc` | no | doc with a numbered build order or milestone task checklists. Without it, endpoint docs and practice hints still work, but task order is unknown. | `docs/TASK_PLAN.md` |
-| `endpointDocs` | no | extra docs with endpoint tables or backticked `METHOD /path` pairs, when requirements and the task plan are separate | `["docs/REQUIREMENTS.md"]` |
-| `docs` | no | more docs to read when writing a lesson | `["docs/architecture.md"]` |
-| `rulesDirs` | no | project coding rules (team lead or CTO). Win over everything else. | `[".claude/rules"]` |
-| `skillsDirs` | no | folders that hold the `nestjs-best-practices` skill | `[".claude/skills"]` |
-| `guidelines` | no | agent guideline files | `["CLAUDE.md"]` |
-| `nestDocsPath` | no | local clone of `docs.nestjs.com`, for exact API checks | `C:/Users/me/Desktop/docs.nestjs.com` |
-| `packageManager` | no | `npm`, `pnpm`, `yarn`, or `bun`. Default: app/root `package.json` `packageManager`, then the lockfile (`bun.lock` or `bun.lockb` included) | `bun` |
-| `testRunner` | no | override runner detection when scripts wrap a tool or the runner is custom. Otherwise inspect the test script, then app/workspace Jest or Vitest dependencies. `null` means unknown, not missing tests. | `jest`, `vitest`, `bun`, `node`, or a custom name |
-| `orm` | no | `typeorm`, `prisma`, `drizzle`, `mikro-orm`, `mongoose`, or `none`. Default: from the app's `package.json`; preserve other project-specific tools when configured. | `prisma` |
-| `migrationCommand` | no | how the app applies migrations | `npm run migration:run` |
-| `databaseUrlEnv` | no | env var with the Postgres URL. Default: `DATABASE_URL` | `DATABASE_URL` |
-| `generator` | no | command prefix to make new files | `npx nest g` |
-| `baseBranch` | yes | branch to start from and open PRs against | `origin/main` |
-| `commitStyle` | no | example commit message | `feat(users): add me endpoint` |
-| `ticketPrefix` | no | ticket id prefix. Default: `L-` | `SHOP-` |
-| `shell` | yes | the owner's shell for commands | `powershell` or `bash` |
-| `baseUrl` | yes | local API url for curl | `http://localhost:3000/api/v1` |
-| `gates` | no | commands that must pass before a PR | see the examples |
-| `standingExceptions` | no | what the agent may always write in the app | `["migrations", "tsdoc", "swagger"]` |
-
-`standingExceptions` values:
-
-| Value | Agent may write |
+| Field | Meaning / default |
 |---|---|
-| `migrations` | migration files: a TypeORM migration class, or a Prisma `migration.sql`. Not Drizzle: there the owner runs `drizzle-kit generate`, so the journal stays right. The owner types the schema change and runs every migration. |
-| `tsdoc` | TSDoc comments in the owner's files, after their code works |
-| `swagger` | `@nestjs/swagger` decorators on DTOs and controllers |
+| appPath | App folder relative to repo; "." or a custom workspace path |
+| sourceRoot | Inside appPath; nest-cli.json sourceRoot, else src |
+| lessonWorktreesPath | Outside-repo reference root; see layout.md |
+| buildOrderDoc | Existing numbered plan or Markdown checklists; IDs optional |
+| endpointDocs | Array of extra endpoint requirement docs; paths relative to repo |
+| docs | Other task-relevant docs to read |
+| rulesDirs | Project rule directories |
+| skillsDirs | Directories containing nestjs-best-practices |
+| guidelines | Agent/project guideline files |
+| nestDocsPath | Local Nest docs clone; optional, otherwise official online docs |
+| packageManager | Explicit npm/pnpm/yarn/bun; otherwise app/root packageManager, then lockfile (including bun.lock/bun.lockb) |
+| testRunner | Override wrapped/custom runner; otherwise script, then app/workspace Jest/Vitest dependencies; null = unknown |
+| orm | Existing tool: TypeORM, Prisma, Drizzle, MikroORM, Mongoose, none, or configured custom tool |
+| migrationCommand | Existing migration script, if needed |
+| databaseUrlEnv | PostgreSQL URL key for helper; DATABASE_URL by default |
+| generator | Existing generator command prefix, e.g. pnpm exec nest g |
+| baseBranch | Starting/shipping target, e.g. origin/main |
+| commitStyle | Project message convention/example |
+| ticketPrefix | L- by default |
+| shell | Owner's shell, e.g. powershell or bash |
+| baseUrl | Owner's local API URL, including prefix/version |
+| gates | Required commands from project rules/scripts |
+| standingExceptions | Allowed owner-app edits; absent values are off |
 
-## Lesson persistence
+Exception values: `migrations` allows TypeORM migration classes or Prisma SQL (owner types schema and runs them). Drizzle migrations/journal/snapshot are generated together by the owner. `tsdoc` allows comments after working code; `swagger` allows matching decorators. Tests/fixes/named app items need the owner's explicit request.
 
-Only lessons that use persistence need isolated storage. Keep the project's engine: PostgreSQL, another SQL database, MongoDB, or SQLite. Do not migrate to PostgreSQL to use the skills. A lesson with no persistence records "database: not applicable".
-
-The bundled `lesson-db.mjs` helper is for PostgreSQL URLs only. For other engines, use the project's native tools to prepare a separate lesson database or file, then prove the app and tests target it. Never run PostgreSQL commands against another engine.
-
-For PostgreSQL, each lesson uses its own database on the owner's server, next to the owner's database:
-
-- Name: `<owner's database name>_lesson_<NN>`. Owner uses `shop`; lesson 04 uses `shop_lesson_04`.
-- The URL is the owner's `databaseUrlEnv` value with only the database name swapped. User, password, host, and port stay the same.
-- The agent creates it in the worktree step and may drop and recreate it. It never drops a database without `_lesson_` in its name.
-- If the owner's database user cannot create databases, ask the owner to create it once (`createdb shop_lesson_04`), or to name another empty database for the lessons.
-
-Each lesson uses `<lessonWorktreesPath>/NN-slug` for its complete solution. Real paths, starting commits, and proof results belong in the lesson docs, not in this config.
-
-If `rulesDirs`, `skillsDirs`, or `guidelines` is missing, the scanner looks in the default places:
-`.claude/rules`, `.cursor/rules`, `.ai/rules`, `.claude/skills`, `.agents/skills`, `~/.claude/skills`, `CLAUDE.md`, `AGENTS.md` (in the repo root and in `appPath`).
-How the agent uses them: [code-quality.md](code-quality.md).
+Without configured paths, scanner searches repo/app `.claude/rules`, `.cursor/rules`, `.ai/rules`, `.claude/skills`, `.agents/skills`; global `~/.claude/skills` and `~/.agents/skills`; repo/app CLAUDE.md and AGENTS.md. See [code-quality.md](code-quality.md) for rule precedence.
 
 ## Commands follow the project
+Inspect scripts (including nested ones), workspace scope, and installed tools first. Use the project's manager; never introduce another lockfile.
 
-Read `package.json` scripts and the project rules before copying a command from a skill example. Use the selected package manager for installs, scripts, generators, and checks. Do not create another manager's lockfile.
-
-| Manager | Run a script with arguments | Run an installed tool | Install from the lockfile in the lesson worktree |
+| Manager | Script | Installed tool | Isolated worktree install |
 |---|---|---|---|
-| npm | `npm run <script> -- <args>` | `npx --no-install <tool> <args>` | `npm ci --ignore-scripts` |
-| pnpm | `pnpm run <script> <args>` | `pnpm exec <tool> <args>` | `pnpm install --frozen-lockfile --ignore-scripts` |
-| yarn | `yarn run <script> <args>` | `yarn run <tool> <args>` | Berry: `yarn install --immutable --mode=skip-build`; v1: `yarn install --frozen-lockfile --ignore-scripts` |
-| bun | `bun run <script> <args>` | `bun run <tool> <args>` | `bun install --frozen-lockfile --ignore-scripts` |
+| npm | npm run SCRIPT -- ARGS | npx --no-install TOOL ARGS | npm ci --ignore-scripts |
+| pnpm | pnpm run SCRIPT ARGS | pnpm exec TOOL ARGS | pnpm install --frozen-lockfile --ignore-scripts |
+| yarn | yarn run SCRIPT ARGS | yarn run TOOL ARGS | Berry: yarn install --immutable --mode=skip-build; v1: --frozen-lockfile --ignore-scripts |
+| bun | bun run SCRIPT ARGS | bun run TOOL ARGS | bun install --frozen-lockfile --ignore-scripts |
 
-For Bun projects using Vitest, run `bun run test`, not `bun test`: the latter selects Bun's own runner. A project intentionally using Bun's native runner keeps it. Use `vi.fn()` / `vi.spyOn()` for Vitest and Jest helpers only for Jest; other runners keep their own APIs. Choose a dev script that exists (for example `dev`, not an assumed `start:dev`). For read-only TypeScript checks, pass `--noEmit --incremental false` to the installed compiler; a project's `typecheck` script may otherwise write `.tsbuildinfo`.
+Bun + Vitest uses `bun run test`, not native `bun test`; native Bun projects keep their runner. Vitest uses `vi`, Jest uses `jest`; other runners keep their APIs. Use existing dev/gate scripts, not assumed names. Read-only compiler flags: `--noEmit --incremental false`.
+An external `--config=FILE` permits read-only scanner trials; paths remain relative to the target. Trial facts are not owner-approved and do not authorize writing lessons.
 
-For a read-only trial, the scanner accepts `--config=<absolute-file>` outside the target repo. Paths inside that config still resolve against the target repo. This does not authorize writing tickets, changing the app, or treating proposed first-run facts as owner-confirmed.
+## Lesson persistence
+Only isolate storage when the task uses it. Otherwise record "database: not applicable". Keep the existing engine. The helper `lesson-db.mjs` accepts PostgreSQL URLs only; MongoDB, other SQL engines, or SQLite use native tools with a separate lesson database/file. Verify the app/tests' effective target, not just .env.
 
-## Full example (monorepo, Prisma)
+PostgreSQL: `<owner-db>_lesson_NN`, plus explicit Prisma shadow `<owner-db>_lesson_NN_shadow`. Preserve other URL parts. Create in worktree setup; never reset/drop the owner's target. If credentials lack creation rights, ask for an isolated database; do not bypass the boundary. Proof paths/results belong in lesson docs, never credentials in config.
 
-```json
-{
-  "appPath": "apps/api",
-  "buildOrderDoc": "docs/api-scope.md",
-  "docs": ["docs/architecture.md"],
-  "rulesDirs": [".claude/rules"],
-  "nestDocsPath": "C:/Users/me/Desktop/docs.nestjs.com",
-  "packageManager": "pnpm",
-  "orm": "prisma",
-  "migrationCommand": "pnpm prisma migrate deploy",
-  "generator": "pnpm nest g",
-  "baseBranch": "origin/main",
-  "commitStyle": "feat(users): add me endpoint",
-  "ticketPrefix": "SHOP-",
-  "shell": "powershell",
-  "baseUrl": "http://localhost:3000/api/v1",
-  "gates": ["pnpm lint", "pnpm build", "pnpm test", "pnpm test:e2e"],
-  "standingExceptions": ["migrations", "tsdoc", "swagger"]
-}
-```
-
-## Small app example (app at repo root, TypeORM)
-
-```json
-{
-  "appPath": ".",
-  "buildOrderDoc": "docs/scope.md",
-  "orm": "typeorm",
-  "migrationCommand": "npm run migration:run",
-  "baseBranch": "origin/main",
-  "shell": "bash",
-  "baseUrl": "http://localhost:3000",
-  "gates": ["npm run lint", "npm run build", "npm test"]
-}
-```
-
-## Empty repo example (before `nest new`)
-
+Minimal config (add discovered optional facts):
 ```json
 {
   "appPath": ".",
@@ -127,5 +63,3 @@ For a read-only trial, the scanner accepts `--config=<absolute-file>` outside th
   "baseUrl": "http://localhost:3000"
 }
 ```
-
-The scan reports `no_nest_app`. Lesson 01 is the scaffold lesson.

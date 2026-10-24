@@ -31,6 +31,8 @@ The skills adapt to the project's stack and rules: npm, pnpm, Yarn, or Bun; root
 
 ## Layout
 
+Instruction-token measurements and reproduction commands: [token benchmark](benchmarks/tokens/README.md). Counts measure explicitly selected instruction files, not full agent usage.
+
 - `skills/nestjs-best-practices/SKILL.md`: entry point and quick reference
 - `skills/nestjs-best-practices/rules/`: one file per rule
 - `AGENTS.md`: generated index, one line per rule (do not edit by hand)

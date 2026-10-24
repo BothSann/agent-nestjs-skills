@@ -4,12 +4,15 @@
   "type": "module",
   "description": "Build scripts for NestJS Best Practices skillset",
   "scripts": {
+    "benchmark:tokens": "node benchmark-tokens.mjs",
+    "test:benchmark": "node --test benchmark-tokens.test.mjs",
     "build": "npx ts-node build-agents.ts",
     "build:watch": "npx nodemon --watch ../skills/nestjs-best-practices/rules --ext md --exec 'npx ts-node build-agents.ts'"
   },
   "devDependencies": {
-    "typescript": "^5.0.0",
+    "@types/node": "^20.0.0",
+    "js-tiktoken": "1.0.21",
     "ts-node": "^10.9.0",
-    "@types/node": "^20.0.0"
+    "typescript": "^5.0.0"
   }
 }

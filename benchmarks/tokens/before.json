@@ -1,0 +1,485 @@
+{
+  "schema": 1,
+  "encoding": "o200k_base",
+  "normalization": "CRLF to LF; sum each distinct file once per scenario",
+  "skills": [
+    {
+      "skill": "nestjs-best-practices",
+      "entryTokens": 1561,
+      "descriptionTokens": 44,
+      "corpusTokens": 56140
+    },
+    {
+      "skill": "nestjs-learn-pick-task",
+      "entryTokens": 3278,
+      "descriptionTokens": 146,
+      "corpusTokens": 17244
+    },
+    {
+      "skill": "nestjs-learn-write-lesson",
+      "entryTokens": 2438,
+      "descriptionTokens": 138,
+      "corpusTokens": 17114
+    },
+    {
+      "skill": "nestjs-learn-coach",
+      "entryTokens": 1387,
+      "descriptionTokens": 153,
+      "corpusTokens": 16415
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "best-practice-lookup",
+      "skill": "nestjs-best-practices",
+      "files": [
+        "skills/nestjs-best-practices/SKILL.md",
+        "skills/nestjs-best-practices/rules/security-validate-all-input.md"
+      ],
+      "tokens": 2550
+    },
+    {
+      "id": "pick-task-configured",
+      "skill": "nestjs-learn-pick-task",
+      "files": [
+        "skills/nestjs-learn-pick-task/SKILL.md",
+        "skills/nestjs-learn-pick-task/references/hard-rules.md",
+        "skills/nestjs-learn-pick-task/references/voice.md",
+        "skills/nestjs-learn-pick-task/references/layout.md",
+        "skills/nestjs-learn-pick-task/references/scoring.md",
+        "skills/nestjs-learn-pick-task/references/practice-tasks.md",
+        "skills/nestjs-learn-pick-task/references/ticket-template.md"
+      ],
+      "tokens": 8990
+    },
+    {
+      "id": "write-lesson",
+      "skill": "nestjs-learn-write-lesson",
+      "files": [
+        "skills/nestjs-learn-write-lesson/SKILL.md",
+        "skills/nestjs-learn-write-lesson/references/hard-rules.md",
+        "skills/nestjs-learn-write-lesson/references/layout.md",
+        "skills/nestjs-learn-write-lesson/references/voice.md",
+        "skills/nestjs-learn-write-lesson/references/project-config.md",
+        "skills/nestjs-learn-write-lesson/references/code-quality.md",
+        "skills/nestjs-learn-write-lesson/references/review-rules.md",
+        "skills/nestjs-learn-write-lesson/references/worktree-run.md",
+        "skills/nestjs-learn-write-lesson/references/readme-template.md",
+        "skills/nestjs-learn-write-lesson/references/guide-template.md",
+        "skills/nestjs-learn-write-lesson/references/check-yourself-template.md"
+      ],
+      "tokens": 16709
+    },
+    {
+      "id": "coach-done",
+      "skill": "nestjs-learn-coach",
+      "files": [
+        "skills/nestjs-learn-coach/SKILL.md",
+        "skills/nestjs-learn-coach/references/hard-rules.md",
+        "skills/nestjs-learn-coach/references/voice.md",
+        "skills/nestjs-learn-coach/references/code-quality.md",
+        "skills/nestjs-learn-coach/references/review-rules.md",
+        "skills/nestjs-learn-coach/references/next-step.md",
+        "skills/nestjs-learn-coach/references/project-config.md"
+      ],
+      "tokens": 10652
+    },
+    {
+      "id": "coach-check",
+      "skill": "nestjs-learn-coach",
+      "files": [
+        "skills/nestjs-learn-coach/SKILL.md",
+        "skills/nestjs-learn-coach/references/hard-rules.md",
+        "skills/nestjs-learn-coach/references/voice.md",
+        "skills/nestjs-learn-coach/references/code-quality.md",
+        "skills/nestjs-learn-coach/references/review-rules.md",
+        "skills/nestjs-learn-coach/references/check.md",
+        "skills/nestjs-learn-coach/references/project-config.md"
+      ],
+      "tokens": 10962
+    }
+  ],
+  "files": {
+    "skills/nestjs-best-practices/rules/_sections.md": {
+      "tokens": 515,
+      "sha256": "d2ce438cdecdec3016deba65f3b082454a940eb1c5b23eb6bd8b280acf9c4319"
+    },
+    "skills/nestjs-best-practices/rules/_template.md": {
+      "tokens": 158,
+      "sha256": "2134386ec9c04b6892e8ba7dd0eb4e65702a0f34cebb023f4d73a3150e805279"
+    },
+    "skills/nestjs-best-practices/rules/api-use-dto-serialization.md": {
+      "tokens": 1624,
+      "sha256": "d6babc4b1c898c8c4085d6276bd623dbb52ca8f3932777dfa448c7177b312c28"
+    },
+    "skills/nestjs-best-practices/rules/api-use-interceptors.md": {
+      "tokens": 1199,
+      "sha256": "61d2a31067becca20236822389c1b086d157156f5ab7279c40b94c74b81a9016"
+    },
+    "skills/nestjs-best-practices/rules/api-use-pipes.md": {
+      "tokens": 1290,
+      "sha256": "42c48d2d321afd67acfd8ccccf554df7711058c942098fa42689fe8347aea372"
+    },
+    "skills/nestjs-best-practices/rules/api-versioning.md": {
+      "tokens": 1060,
+      "sha256": "ad302561d7f311ead6618c0aede483ba94069a9ab5d87937380dbb493cd3e934"
+    },
+    "skills/nestjs-best-practices/rules/arch-avoid-circular-deps.md": {
+      "tokens": 628,
+      "sha256": "090d9b237adbe9f727a7d281f119b47905d94a76d033bde95d7e5b0c53e7ec9d"
+    },
+    "skills/nestjs-best-practices/rules/arch-feature-modules.md": {
+      "tokens": 559,
+      "sha256": "dfb542e5aa61e8f58c4f9fa05009a5b866e79d77475f406bdcb98e03d6b28bb4"
+    },
+    "skills/nestjs-best-practices/rules/arch-module-sharing.md": {
+      "tokens": 826,
+      "sha256": "dd25df677a7af6b37d5311342da8019e6e2d389ce97310eb2602f34912eab82d"
+    },
+    "skills/nestjs-best-practices/rules/arch-single-responsibility.md": {
+      "tokens": 655,
+      "sha256": "2d6ffc3e6ad6113146908671860bc0d4e1ba66a8e17e77eb3fa5ddba3c0dc387"
+    },
+    "skills/nestjs-best-practices/rules/arch-use-events.md": {
+      "tokens": 633,
+      "sha256": "217315b3a8131bda51d0717955b65f1b902acf7d0e7244c354b78266591549ca"
+    },
+    "skills/nestjs-best-practices/rules/arch-use-repository-pattern.md": {
+      "tokens": 650,
+      "sha256": "e0c3fea3968b721cd414f492c0a16667a2bc994d3795aabd8bde7bec99a3e224"
+    },
+    "skills/nestjs-best-practices/rules/db-avoid-n-plus-one.md": {
+      "tokens": 923,
+      "sha256": "1bd61b7502c9b35fd62fcb1c5292805a4f449888fe99666ff004edd11cabf67c"
+    },
+    "skills/nestjs-best-practices/rules/db-drizzle-prisma-integration.md": {
+      "tokens": 1031,
+      "sha256": "b748fd2c0070e366d203da3dacb1dba8a5b45515e011a191a50ca4dab58b313a"
+    },
+    "skills/nestjs-best-practices/rules/db-use-migrations.md": {
+      "tokens": 906,
+      "sha256": "7297818a30f903079b1d0fc51de8520e616bc696c3168bad9bf9f23a896cca45"
+    },
+    "skills/nestjs-best-practices/rules/db-use-transactions.md": {
+      "tokens": 886,
+      "sha256": "c77de2b40c8ba7eea77aba8bec91ec8bcf382c3faeaa66d0368cb6914202bdac"
+    },
+    "skills/nestjs-best-practices/rules/ddd-aggregate-repository.md": {
+      "tokens": 1133,
+      "sha256": "3fc2e454518f2c2d7965c01ebd519f532e032ddbfd95dcd52d14c82fc030d4d1"
+    },
+    "skills/nestjs-best-practices/rules/ddd-bounded-context-modules.md": {
+      "tokens": 1164,
+      "sha256": "a7c0e37ed3ef48247f616426f4a673d7474d7b9249e28495e8bf28bc7e26e72c"
+    },
+    "skills/nestjs-best-practices/rules/ddd-cqrs.md": {
+      "tokens": 1229,
+      "sha256": "76743e9d6388d870c775e13bc514a40f9f3790a4e291538adbf007d29a87b85e"
+    },
+    "skills/nestjs-best-practices/rules/ddd-module-public-api.md": {
+      "tokens": 1209,
+      "sha256": "75fda864c2f7c2619bb027560603460c2e392d33e39c89c400f4f0ecd44f47a0"
+    },
+    "skills/nestjs-best-practices/rules/ddd-rich-domain-model.md": {
+      "tokens": 1597,
+      "sha256": "d5a7038a8f7d5029af9c52933fb88a4938730bd4a7fa6406c00e3c061eee815e"
+    },
+    "skills/nestjs-best-practices/rules/ddd-transactional-outbox.md": {
+      "tokens": 1690,
+      "sha256": "f15f3a205bfbae34add2e8169efd78c7f6fb7815d2c4e8e97dc34923c686850e"
+    },
+    "skills/nestjs-best-practices/rules/devops-docker-and-dependencies.md": {
+      "tokens": 779,
+      "sha256": "5bd9a7ac16d3890579fcf4f616977e00dda80013f4ada710fb75a7ff956c747b"
+    },
+    "skills/nestjs-best-practices/rules/devops-graceful-shutdown.md": {
+      "tokens": 872,
+      "sha256": "346971bfa0284bb42711098b78ed8608411656bc4a5f2068784bd823e022c0d4"
+    },
+    "skills/nestjs-best-practices/rules/devops-use-config-module.md": {
+      "tokens": 1057,
+      "sha256": "ec64ccf5612b40151bca33a8ff69981fd79c10f3becc73cd542b875ce912089e"
+    },
+    "skills/nestjs-best-practices/rules/devops-use-logging.md": {
+      "tokens": 1109,
+      "sha256": "0a6adc211a190ea5f12eb81677030fb6af25ea81a056588e5f622458dc8ca4d9"
+    },
+    "skills/nestjs-best-practices/rules/devops-use-tracing.md": {
+      "tokens": 829,
+      "sha256": "25fac7de6685c55edade470e699aa4b7e1e40ca818a587d8b8255704d78a7c17"
+    },
+    "skills/nestjs-best-practices/rules/di-avoid-service-locator.md": {
+      "tokens": 619,
+      "sha256": "c8c2358cf5c65117c829bb223a28cab598fa95aacd052519323e9f114536bd50"
+    },
+    "skills/nestjs-best-practices/rules/di-interface-segregation.md": {
+      "tokens": 1119,
+      "sha256": "516264701ddf2440c3fd47d5069a9020225cc4f6be5cc3a1caaf46aea6fc7d64"
+    },
+    "skills/nestjs-best-practices/rules/di-liskov-substitution.md": {
+      "tokens": 1525,
+      "sha256": "658178d263af65eb96656f2af4b66382c8139f09a3c352a9ce25b5bd671b46b2"
+    },
+    "skills/nestjs-best-practices/rules/di-prefer-constructor-injection.md": {
+      "tokens": 493,
+      "sha256": "8b990dc7c913fd65ed1afb5125ffccb8c92929499ab05e6f3f7d8c0161078362"
+    },
+    "skills/nestjs-best-practices/rules/di-scope-awareness.md": {
+      "tokens": 592,
+      "sha256": "a7ce49b13a221f475872b3c3e49072ef95c6bfdc20561ce8cd72dbeb20d23119"
+    },
+    "skills/nestjs-best-practices/rules/di-use-interfaces-tokens.md": {
+      "tokens": 533,
+      "sha256": "5080cf42104af01844e7fc70f46e0753934fd110fec1a10def7622753493d318"
+    },
+    "skills/nestjs-best-practices/rules/error-handle-async-errors.md": {
+      "tokens": 961,
+      "sha256": "cd2a1043ca0b5ed04496b6ceea6a94aa1cb6f8d294a3c180601c88391a87626c"
+    },
+    "skills/nestjs-best-practices/rules/error-throw-http-exceptions.md": {
+      "tokens": 718,
+      "sha256": "e19bf1ecbb47081a48a7ba962e67471b748a355815494a386d8bd820f588818b"
+    },
+    "skills/nestjs-best-practices/rules/error-use-exception-filters.md": {
+      "tokens": 888,
+      "sha256": "cf6e958e65c37f66b722eb3100880288875777e65a619b2bd08fb4ac4b6f4f1d"
+    },
+    "skills/nestjs-best-practices/rules/micro-use-health-checks.md": {
+      "tokens": 1623,
+      "sha256": "3a6017854c774699b4e1ea9991541b39deff6bf520c381f8b4306493cf60e0ed"
+    },
+    "skills/nestjs-best-practices/rules/micro-use-idempotency-keys.md": {
+      "tokens": 818,
+      "sha256": "a19e07486fa8ac811a91cfa7a104c8ce46a788d8da7493edb5982ca0321e7520"
+    },
+    "skills/nestjs-best-practices/rules/micro-use-patterns.md": {
+      "tokens": 1089,
+      "sha256": "6d9d2c6cfdce3d6dac99532b83df359116c8590fc06d62d40f13f453bc473391"
+    },
+    "skills/nestjs-best-practices/rules/micro-use-queues.md": {
+      "tokens": 1990,
+      "sha256": "e95ad8bb4758292b6552420d2a939ab652ee6896ca8112a18c930f0ce28a101e"
+    },
+    "skills/nestjs-best-practices/rules/micro-use-resilience.md": {
+      "tokens": 924,
+      "sha256": "2c397a9bf64f6f9bf28bbe167c3026a188c7a007f7b3b871859d8d57d441290f"
+    },
+    "skills/nestjs-best-practices/rules/perf-async-hooks.md": {
+      "tokens": 611,
+      "sha256": "b6e38415f872d6018f64f4f8e3242c25748df6b41e09f04609bd50201b4a08b0"
+    },
+    "skills/nestjs-best-practices/rules/perf-lazy-loading.md": {
+      "tokens": 823,
+      "sha256": "02ac0de2bfdc96fbc09feaee6792ca13930e75137d7cc90bf25bfe7d1b62e4b4"
+    },
+    "skills/nestjs-best-practices/rules/perf-optimize-database.md": {
+      "tokens": 766,
+      "sha256": "07176139c7a3c3d6298e64e184d9d6329c96367aa1cafab8ccab2b3f27564869"
+    },
+    "skills/nestjs-best-practices/rules/perf-use-caching.md": {
+      "tokens": 907,
+      "sha256": "ff6e5749da6226b10d02d2c1ad2f26d14c7050534a0badccfa9b27d20a5cdc4c"
+    },
+    "skills/nestjs-best-practices/rules/perf-use-fastify.md": {
+      "tokens": 676,
+      "sha256": "d6d124b4baf37712fdc02ed96defcc0e52c5c91a6add41eb1049298a1a932268"
+    },
+    "skills/nestjs-best-practices/rules/security-auth-jwt.md": {
+      "tokens": 1301,
+      "sha256": "01173ca40e6335f27bb6c113c4a1c7a7fd61e23bd2711a6e634f92863dda5c77"
+    },
+    "skills/nestjs-best-practices/rules/security-authorize-records.md": {
+      "tokens": 1223,
+      "sha256": "fd5851c1b6aca988156846226658280d59a4581e1f4f63d00e4ae1385bce9636"
+    },
+    "skills/nestjs-best-practices/rules/security-headers-cors-csrf.md": {
+      "tokens": 1060,
+      "sha256": "d4870d5f1b8b868bba767b6c5892db053298f1111f10a6c40f1cd9f4f4106cc6"
+    },
+    "skills/nestjs-best-practices/rules/security-rate-limiting.md": {
+      "tokens": 997,
+      "sha256": "633787c20dfc800032b5ed3863b7390c1ba718654e85d86fa0d043f0b64a9627"
+    },
+    "skills/nestjs-best-practices/rules/security-sanitize-output.md": {
+      "tokens": 900,
+      "sha256": "6be95b54bec62ae032f992b9e719ff47106a094d2caefe26e4155985c15899b2"
+    },
+    "skills/nestjs-best-practices/rules/security-use-guards.md": {
+      "tokens": 810,
+      "sha256": "1ae2bfde0e84264a7656951161e4cd2d1c4388b5baba9ec8c9f15baf34c4c5f9"
+    },
+    "skills/nestjs-best-practices/rules/security-validate-all-input.md": {
+      "tokens": 989,
+      "sha256": "f0cfe6e33b1c8ff086c004fe4bf87011423b437ebc209d5838afa7b47d677168"
+    },
+    "skills/nestjs-best-practices/rules/test-e2e-supertest.md": {
+      "tokens": 1131,
+      "sha256": "7c3c7a3a440f8dbb7aea64408a4134852965fecafb9277fe3bc01915dc81d93e"
+    },
+    "skills/nestjs-best-practices/rules/test-mock-external-services.md": {
+      "tokens": 1092,
+      "sha256": "905ee22160ebfb58c6ee46e73138c11d3fd46bcb5cb07307434677be02d29673"
+    },
+    "skills/nestjs-best-practices/rules/test-use-testing-module.md": {
+      "tokens": 1190,
+      "sha256": "303880bc4351642542b1aec0ba60473572ce3767c5bf6f056af3c44261706147"
+    },
+    "skills/nestjs-best-practices/SKILL.md": {
+      "tokens": 1561,
+      "sha256": "2cefe50dfd1495a7704d51eb6dfc484d52f65be0e926d184bb95d5dc4fbdb6ce"
+    },
+    "skills/nestjs-learn-pick-task/README.md": {
+      "tokens": 367,
+      "sha256": "a5404d8599287f4cd6346e13065f6dbe73aa013deb77e4931a974e10ff2735eb"
+    },
+    "skills/nestjs-learn-pick-task/references/code-quality.md": {
+      "tokens": 2171,
+      "sha256": "0ac02c0cfdf7994e0e38224c83dbf030b6745ea9d23790b0d2b201d35ca5e45f"
+    },
+    "skills/nestjs-learn-pick-task/references/first-run.md": {
+      "tokens": 1135,
+      "sha256": "e543ac1038803658b00e24b9fa41b144b023a5c8f2bbd7ba60923d8cf37dc0bc"
+    },
+    "skills/nestjs-learn-pick-task/references/hard-rules.md": {
+      "tokens": 1065,
+      "sha256": "caa7ab8b1318cb906e8688648bf445fd76aa3962f8bc6d094f9980f5f47d20a9"
+    },
+    "skills/nestjs-learn-pick-task/references/layout.md": {
+      "tokens": 765,
+      "sha256": "968d874a9217b7a0e529e949079872c961d7e15095a4c7e162561922b1b5901d"
+    },
+    "skills/nestjs-learn-pick-task/references/practice-tasks.md": {
+      "tokens": 1222,
+      "sha256": "5e51ada2a2c71044a67b348e94daffb8f119eea01307c2e48dbb6d180d6bb605"
+    },
+    "skills/nestjs-learn-pick-task/references/project-config.md": {
+      "tokens": 2295,
+      "sha256": "a0263a6258333a0b5606839c0e1bfecc77356cf358b79bb0dbc49c1169f11063"
+    },
+    "skills/nestjs-learn-pick-task/references/review-rules.md": {
+      "tokens": 2286,
+      "sha256": "2f02340e7f71a3d371b3e8cf089d3e39735ab7a65be986432dd60fa29d69a8b1"
+    },
+    "skills/nestjs-learn-pick-task/references/scoring.md": {
+      "tokens": 1020,
+      "sha256": "4f1cdf2da5e4cc8121596bce7f90c3918724123afe9d4559f5b326fbf0c2f2cf"
+    },
+    "skills/nestjs-learn-pick-task/references/ticket-template.md": {
+      "tokens": 1045,
+      "sha256": "b56ff4aaccf219416e703dd45b48d3f30d1a6f4525eab088e3bf9ebda64bafe2"
+    },
+    "skills/nestjs-learn-pick-task/references/voice.md": {
+      "tokens": 595,
+      "sha256": "674fa6172ce0635aa35321afbc61b2cba87ab20b1addf6be45d0d4c9e2d8a559"
+    },
+    "skills/nestjs-learn-pick-task/SKILL.md": {
+      "tokens": 3278,
+      "sha256": "dd9eb6107f2052ada421150cd884b270e6fefbbeb1165483dab1d83a5bf5defe"
+    },
+    "skills/nestjs-learn-write-lesson/README.md": {
+      "tokens": 405,
+      "sha256": "a930326ebb68916b28c895fad52c61ee5cc364ef26405904488e9c2e3cd628db"
+    },
+    "skills/nestjs-learn-write-lesson/references/check-yourself-template.md": {
+      "tokens": 463,
+      "sha256": "c5f2667fbf36fff473d3e0f7fb37d2f05a4e2792c4d112f41530ec9ecf5c2d89"
+    },
+    "skills/nestjs-learn-write-lesson/references/code-quality.md": {
+      "tokens": 2171,
+      "sha256": "0ac02c0cfdf7994e0e38224c83dbf030b6745ea9d23790b0d2b201d35ca5e45f"
+    },
+    "skills/nestjs-learn-write-lesson/references/guide-template.md": {
+      "tokens": 1136,
+      "sha256": "969781bfd5a6e347b56447486353d56ca529e11b5da4d294abf91d8c8b063522"
+    },
+    "skills/nestjs-learn-write-lesson/references/hard-rules.md": {
+      "tokens": 1065,
+      "sha256": "caa7ab8b1318cb906e8688648bf445fd76aa3962f8bc6d094f9980f5f47d20a9"
+    },
+    "skills/nestjs-learn-write-lesson/references/layout.md": {
+      "tokens": 765,
+      "sha256": "968d874a9217b7a0e529e949079872c961d7e15095a4c7e162561922b1b5901d"
+    },
+    "skills/nestjs-learn-write-lesson/references/project-config.md": {
+      "tokens": 2295,
+      "sha256": "a0263a6258333a0b5606839c0e1bfecc77356cf358b79bb0dbc49c1169f11063"
+    },
+    "skills/nestjs-learn-write-lesson/references/readme-template.md": {
+      "tokens": 697,
+      "sha256": "7b675f0bda37fb3042e745e83550e0c224acb315c54da5877cd2818ec11bcb5a"
+    },
+    "skills/nestjs-learn-write-lesson/references/review-rules.md": {
+      "tokens": 2286,
+      "sha256": "2f02340e7f71a3d371b3e8cf089d3e39735ab7a65be986432dd60fa29d69a8b1"
+    },
+    "skills/nestjs-learn-write-lesson/references/voice.md": {
+      "tokens": 595,
+      "sha256": "674fa6172ce0635aa35321afbc61b2cba87ab20b1addf6be45d0d4c9e2d8a559"
+    },
+    "skills/nestjs-learn-write-lesson/references/worktree-run.md": {
+      "tokens": 2798,
+      "sha256": "3a93360ed95c6c31b1a1e3a164a271c8906346475a54d2100dfc2e0952fb2f02"
+    },
+    "skills/nestjs-learn-write-lesson/SKILL.md": {
+      "tokens": 2438,
+      "sha256": "09550f331f593f3d9ea790fcf3ee5b40283ebb7262ae0c7a38107901fc345c31"
+    },
+    "skills/nestjs-learn-coach/README.md": {
+      "tokens": 246,
+      "sha256": "6a790a7cce01e4e7ea4335e50009c168dfa2deadc92e15349d5cd4034d47d159"
+    },
+    "skills/nestjs-learn-coach/references/check.md": {
+      "tokens": 1163,
+      "sha256": "9dcc6e0f255dc2f0a03a4aadcb38a660a8393ef397dfaaa58d44b7986613f9dd"
+    },
+    "skills/nestjs-learn-coach/references/code-quality.md": {
+      "tokens": 2171,
+      "sha256": "0ac02c0cfdf7994e0e38224c83dbf030b6745ea9d23790b0d2b201d35ca5e45f"
+    },
+    "skills/nestjs-learn-coach/references/hard-rules.md": {
+      "tokens": 1065,
+      "sha256": "caa7ab8b1318cb906e8688648bf445fd76aa3962f8bc6d094f9980f5f47d20a9"
+    },
+    "skills/nestjs-learn-coach/references/layout.md": {
+      "tokens": 765,
+      "sha256": "968d874a9217b7a0e529e949079872c961d7e15095a4c7e162561922b1b5901d"
+    },
+    "skills/nestjs-learn-coach/references/next-step.md": {
+      "tokens": 853,
+      "sha256": "083e34aef893182a31e9c7141351f4180b13f47031ed7df0aca23bd6befdce8c"
+    },
+    "skills/nestjs-learn-coach/references/project-config.md": {
+      "tokens": 2295,
+      "sha256": "a0263a6258333a0b5606839c0e1bfecc77356cf358b79bb0dbc49c1169f11063"
+    },
+    "skills/nestjs-learn-coach/references/review-rules.md": {
+      "tokens": 2286,
+      "sha256": "2f02340e7f71a3d371b3e8cf089d3e39735ab7a65be986432dd60fa29d69a8b1"
+    },
+    "skills/nestjs-learn-coach/references/ship.md": {
+      "tokens": 813,
+      "sha256": "3621d7f097219e4eeff2869f7c58e896526bd8a5f88b1c969a4a493b655bf256"
+    },
+    "skills/nestjs-learn-coach/references/standing-exceptions.md": {
+      "tokens": 1102,
+      "sha256": "75e94dd3c03574e0105bdb1d7b4c2b2e4207fcc6aea6db3d573fb75f68f01447"
+    },
+    "skills/nestjs-learn-coach/references/stuck.md": {
+      "tokens": 845,
+      "sha256": "e04a9bffdc41afbec02815b18ffc9692664451320de251e6e5ad2f26eaf98617"
+    },
+    "skills/nestjs-learn-coach/references/teach.md": {
+      "tokens": 829,
+      "sha256": "327bf7e042948972029117b76425188d6de31fd9b3bc9afbaeb75a19ba835aa5"
+    },
+    "skills/nestjs-learn-coach/references/voice.md": {
+      "tokens": 595,
+      "sha256": "674fa6172ce0635aa35321afbc61b2cba87ab20b1addf6be45d0d4c9e2d8a559"
+    },
+    "skills/nestjs-learn-coach/SKILL.md": {
+      "tokens": 1387,
+      "sha256": "8d4a9588d7708d3bcb8cb49b5420aafb692943b2889ea37ef0cdc6093439d186"
+    }
+  },
+  "label": "c266a37"
+}
