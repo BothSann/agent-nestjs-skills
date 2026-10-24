@@ -59,9 +59,13 @@ function setEnv(path, updates) {
   const out = [...lines];
   for (const [key, value] of Object.entries(updates)) {
     const line = `${key}="${value}"`;
-    const i = out.findIndex((l) => new RegExp(`^\\s*(?:export\\s+)?${key}\\s*=`).test(l));
-    if (i === -1) out.splice(out.length && out[out.length - 1] === '' ? out.length - 1 : out.length, 0, line);
-    else out[i] = line;
+    let found = false;
+    for (let i = 0; i < out.length; i++) {
+      if (out[i].match(/^\s*(?:export\s+)?([\w.-]+)\s*=/)?.[1] !== key) continue;
+      out[i] = line;
+      found = true;
+    }
+    if (!found) out.splice(out.length && out[out.length - 1] === '' ? out.length - 1 : out.length, 0, line);
   }
   writeFileAtomic(path, `${out.join('\n').replace(/\n*$/, '')}\n`);
 }
@@ -83,16 +87,30 @@ function linkInfo(path) {
   }
 }
 
-function dbName(url) {
-  const parsed = new URL(url);
+function parseDatabaseUrl(url) {
+  let parsed;
+  try {
+    parsed = new URL(url);
+  } catch {
+    fail('Invalid database URL. Check the configured value (omitted to protect credentials).');
+  }
   if (!['postgres:', 'postgresql:'].includes(parsed.protocol)) {
     fail('lesson-db supports PostgreSQL URLs only. Use the project\'s native tools to isolate another database engine.');
   }
-  return decodeURIComponent(parsed.pathname.slice(1));
+  return parsed;
+}
+
+function dbName(url) {
+  const parsed = parseDatabaseUrl(url);
+  try {
+    return decodeURIComponent(parsed.pathname.slice(1));
+  } catch {
+    fail('Invalid database URL. Check database name encoding (value omitted).');
+  }
 }
 
 function withDb(url, name) {
-  const u = new URL(url);
+  const u = parseDatabaseUrl(url);
   u.pathname = `/${encodeURIComponent(name)}`;
   return u.href;
 }
@@ -100,7 +118,7 @@ function withDb(url, name) {
 // URL for the `postgres` database, for CREATE DATABASE. Drops ORM-only query params
 // such as Prisma's `?schema=public`, which psql and pg refuse; keeps SSL settings.
 function adminUrl(url) {
-  const u = new URL(withDb(url, 'postgres'));
+  const u = parseDatabaseUrl(withDb(url, 'postgres'));
   for (const key of [...u.searchParams.keys()]) {
     if (!/^ssl/i.test(key)) u.searchParams.delete(key);
   }

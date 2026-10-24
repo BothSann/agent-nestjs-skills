@@ -59,6 +59,42 @@ test('prepare never prints the password', () => {
   assert.doesNotMatch(r.out + r.err, /s3cret/);
 });
 
+test('malformed database URLs fail without exposing credentials or the URL', () => {
+  const url = 'postgresql://review:fixture-secret@bad host/shop_lesson_04';
+  const a = apps(`DATABASE_URL="${url}"\n`, 'PORT=3004\n');
+  for (const [command, args] of [
+    ['prepare', ['--main-app', a.main, '--worktree-app', a.worktree, '--lesson', '04']],
+    ['check', ['--worktree-app', a.main]],
+    ['create', ['--worktree-app', a.main]],
+  ]) {
+    const r = run(command, ...args);
+    assert.equal(r.status, 1);
+    assert.doesNotMatch(r.out + r.err, /fixture-secret|postgresql:\/\//);
+    assert.match(r.err, /invalid database URL/i);
+  }
+  assert.equal(a.env(), 'PORT=3004\n');
+});
+
+test('prepare updates every duplicate definition so the effective target is isolated', () => {
+  const a = apps(`DATABASE_URL=${URL_MAIN}\n`, `PORT=3004\nDATABASE_URL=${URL_MAIN}\nexport DATABASE_URL=${URL_MAIN}\n`);
+  const prepared = run('prepare', '--main-app', a.main, '--worktree-app', a.worktree, '--lesson', '04');
+  assert.equal(prepared.status, 0, prepared.err);
+  const checked = run('check', '--worktree-app', a.worktree);
+  assert.equal(checked.status, 0, checked.err);
+  assert.equal(checked.out, 'shop_lesson_04');
+  assert.equal(readFileSync(join(a.main, '.env'), 'utf8'), `DATABASE_URL=${URL_MAIN}\n`);
+});
+
+test('custom environment variable names are matched literally', () => {
+  const a = apps(`DB.URL=${URL_MAIN}\n`, `DBxURL=keep-this-value\nDB.URL=${URL_MAIN}\n`);
+  const r = run('prepare', '--main-app', a.main, '--worktree-app', a.worktree, '--lesson', '04', '--env', 'DB.URL');
+  assert.equal(r.status, 0, r.err);
+  assert.match(a.env(), /^DBxURL=keep-this-value$/m);
+  const checked = run('check', '--worktree-app', a.worktree, '--env', 'DB.URL');
+  assert.equal(checked.status, 0, checked.err);
+  assert.equal(checked.out, 'shop_lesson_04');
+});
+
 test('prepare drops an inline comment after an unquoted value', () => {
   const a = apps(`DATABASE_URL=${URL_MAIN} # local db\n`);
   run('prepare', '--main-app', a.main, '--worktree-app', a.worktree, '--lesson', '04');

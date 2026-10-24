@@ -84,7 +84,7 @@ function readJson(path) {
   const text = readText(path);
   if (text === null) return null;
   try {
-    return JSON.parse(text);
+    return JSON.parse(text.replace(/^\uFEFF/, ''));
   } catch (error) {
     log(`bad JSON in ${path}: ${error.message}`);
     return null;
@@ -133,16 +133,13 @@ function lineOf(text, index) {
 
 function loadConfig(root, configPath) {
   const path = configPath ?? join(root, 'learn', 'learn.config.json');
-  if (configPath) {
-    const config = readJson(path);
-    if (!config || typeof config !== 'object' || Array.isArray(config)) {
-      log(`cannot read config object: ${path}`);
-      process.exit(2);
-    }
-    return config;
+  if (!configPath && !existsSync(path)) return null;
+  const config = readJson(path);
+  if (!config || typeof config !== 'object' || Array.isArray(config)) {
+    log(`cannot read config object: ${path}`);
+    process.exit(2);
   }
-  if (!existsSync(path)) return null;
-  return readJson(path);
+  return config;
 }
 
 function allDeps(pkg) {
@@ -632,8 +629,8 @@ function scanPractices(root, srcDir, tsFiles, stack, data, tests) {
   else add('config-validation', 'devops-use-config-module', 'ok', configAt);
 
   const rawEnv = sources
-    .filter(({ file }) => !/config|main\.ts$/i.test(file))
-    .flatMap(({ file, text }) => [...text.matchAll(/process\.env\.\w+/g)].map((m) => `${file}:${lineOf(text, m.index)}`))
+    .filter(({ file }) => !/(?:^|\/)(?:config|configuration|configs)(?:\/|\.[^/]+$)|\.config\.[^/]+$/i.test(file))
+    .flatMap(({ file, text }) => [...text.matchAll(/process\.env(?:\.\w+|\[\s*(['"])\w+\1\s*\])/g)].map((m) => `${file}:${lineOf(text, m.index)}`))
     .slice(0, 3);
   if (rawEnv.length) add('raw-process-env', 'devops-use-config-module', 'problem', rawEnv, 'process.env read outside config');
 
