@@ -116,7 +116,7 @@ Each rule is short. The example shows the mistake it catches.
    - a one-line title
    - an Actual / Expected row with a real input
    - a fix
-   - the rule it breaks
+   - the rule it breaks, or the proof you ran when no rule names the bug (see `code-quality.md`, "In a review")
 5. Keep questions apart from findings.
 6. On a recheck, prove each fix by running it. Reading it is not proof.
 7. Check how the framework behaves in `node_modules` or by running it. Not from memory.

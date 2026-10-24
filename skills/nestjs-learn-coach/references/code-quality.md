@@ -113,4 +113,13 @@ Every finding in "Breaks" and "Style" names its source:
 | `src/auth/auth.controller.ts:31` | `login(@Body() body: any)` | No DTO, so `ValidationPipe` checks nothing and extra fields get through | best practice: `security-validate-all-input.md` |
 ```
 
-No source for a finding? Then it is taste, not a rule. Say it is optional, or leave it out.
+A source is one of these:
+
+- a rule file: project rule, `review-rules.md`, or a best-practice rule
+- a ticket acceptance criterion
+- proof you ran that shows wrong behavior: a curl, a test, a `tsc` error, a log line
+
+| Finding | Needs | No source? |
+|---|---|---|
+| Breaks (bug, wrong status, leak, security hole) | a rule, a criterion, **or** proof | Keep it if you can show it. Write the proof in the row: the input, what came back, what should come back. Never drop a bug you can show because no rule file names it. |
+| Style (names, layout, taste) | a rule file | It is taste, not a rule. Say it is optional, or leave it out. |

@@ -4,7 +4,7 @@ description: Turn a picked NestJS learning ticket into a full lesson - build and
 license: MIT
 metadata:
   author: thannsopheakboth
-  version: "1.0.1"
+  version: "1.0.2"
 ---
 
 # NestJS Learn: Write the Lesson
@@ -51,7 +51,7 @@ Read these first:
 - Tests: one per acceptance criterion and per decision in the code. Unit tests with `Test.createTestingModule`. E2E tests with `supertest` against the lesson database, using the same app setup as `main.ts`.
 - Use the same generators the owner will use, run from the app folder inside the worktree. The guide gives the exact `generator` command and shows the tested final code.
 - Only the files this ticket needs. No extras "for later".
-- Migrations: write and run them in the worktree. In the owner's app, write the same migration only when `standingExceptions` has `migrations` and the owner confirms. The owner runs it.
+- Migrations: write and run them in the worktree. The owner types the schema change (entity, `schema.prisma` model, Drizzle table) in their app. Then, only when `standingExceptions` has `migrations` and the owner confirms, the agent writes the same TypeORM or Prisma migration file there. Drizzle: the guide has the owner run `npx drizzle-kit generate` instead, so the journal stays right. The owner runs every migration.
 - Tests: write and run them in the worktree to prove the solution. Do not tell the owner to type them. Write tests in the owner's app only when the owner asks.
 - TSDoc and Swagger decorators: add them in the worktree. The owner does not type them. Add them to the owner's files later, when `standingExceptions` allows it.
 - Take GUIDE snippets and expected output from the tested solution. Record its location, baseline, changed files, and proof results in README and GUIDE.

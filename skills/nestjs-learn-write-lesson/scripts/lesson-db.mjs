@@ -7,6 +7,8 @@
 //     Copies <main-app>/.env to <worktree-app>/.env (only if the worktree has none), then sets
 //     <env> to the same URL with the database renamed to <name>_lesson_<NN>.
 //     --shadow also sets SHADOW_DATABASE_URL to <name>_lesson_<NN>_shadow (for Prisma).
+//     Refuses unless <worktree-app> is in a linked worktree (git worktree add) of the same
+//     repository as <main-app>, outside the main checkout. So it never rewrites the owner's .env.
 //   node lesson-db.mjs create --worktree-app <dir> [--env DATABASE_URL] [--shadow]
 //     Creates the lesson database (and the shadow one) on the same server. Already there: fine.
 //   node lesson-db.mjs check --worktree-app <dir> [--env DATABASE_URL] [--shadow]
@@ -15,9 +17,9 @@
 // Only names ending in _lesson_<NN> or _lesson_<NN>_shadow are ever created. This script never drops.
 
 import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { join, resolve } from 'node:path';
+import { isAbsolute, join, relative, resolve } from 'node:path';
 
 const LESSON_NAME = /_lesson_\d{2,}(?:_shadow)?$/;
 
@@ -82,6 +84,33 @@ function adminUrl(url) {
   return u.href;
 }
 
+function realPath(path) {
+  const real = realpathSync.native(path);
+  return process.platform === 'win32' ? real.toLowerCase() : real;
+}
+
+function git(dir, ...args) {
+  const result = spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8' });
+  return result.status === 0 ? result.stdout.trim().split(/\r?\n/).map(realPath) : null;
+}
+
+// The worktree app must sit in a linked worktree of the main app's repository, outside the
+// main checkout. Same folder, a path into the main checkout, or a plain folder: refuse.
+function checkIsolated(mainApp, worktreeApp) {
+  if (!existsSync(worktreeApp)) fail(`--worktree-app does not exist: ${worktreeApp}`);
+  if (realPath(mainApp) === realPath(worktreeApp)) fail('refusing: --main-app and --worktree-app are the same folder');
+  const args = ['rev-parse', '--path-format=absolute', '--show-toplevel', '--git-common-dir', '--git-dir'];
+  const main = git(mainApp, ...args);
+  const lesson = git(worktreeApp, ...args);
+  if (!main || !lesson) fail('refusing: both folders must be inside Git checkouts');
+  const [mainTop, mainCommon] = main;
+  const [lessonTop, lessonCommon, lessonGitDir] = lesson;
+  const inside = relative(mainTop, lessonTop);
+  if (!inside || (!inside.startsWith('..') && !isAbsolute(inside))) fail('refusing: --worktree-app is inside the main checkout');
+  if (lessonCommon !== mainCommon) fail('refusing: --worktree-app is not a worktree of the main repository');
+  if (lessonGitDir === lessonCommon) fail('refusing: --worktree-app is not a linked worktree (make it with git worktree add)');
+}
+
 function quoteIdent(name) {
   return `"${name.replace(/"/g, '""')}"`;
 }
@@ -92,6 +121,7 @@ function prepare(args) {
   const lesson = option(args, 'lesson') ?? fail('--lesson is required');
   const key = option(args, 'env', 'DATABASE_URL');
   if (!/^\d{2,}$/.test(lesson)) fail(`--lesson must be the two-digit lesson number, got "${lesson}"`);
+  checkIsolated(mainApp, worktreeApp);
 
   const mainUrl = readEnv(join(mainApp, '.env')).values[key];
   if (!mainUrl) fail(`${key} not found in ${join(mainApp, '.env')}`);
