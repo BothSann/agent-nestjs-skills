@@ -204,6 +204,19 @@ test('sees ConfigModule validate in shorthand form', () => {
   assert.equal(practice(json, 'config-validation').status, 'ok');
 });
 
+test('flags bootstrap env reads and does not exempt arbitrary filenames containing config', () => {
+  const root = makeRepo('bootstrap-env-policy', {
+    ...FILES,
+    'app/src/main.ts': 'const app = await NestFactory.create(AppModule);\nawait app.listen(process.env.PORT ?? 3000);\n',
+    'app/src/users/configured-user.service.ts': "export const limit = process.env['REQUEST_LIMIT'];\n",
+    'app/src/config/env.ts': 'export const load = () => process.env.DATABASE_URL;\n',
+    'app/src/app.config.ts': 'export const config = () => process.env.LOG_LEVEL;\n',
+  });
+  const hint = practice(scan(root).json, 'raw-process-env');
+  assert.equal(hint.status, 'problem');
+  assert.deepEqual(hint.evidence, ['app/src/main.ts:2', 'app/src/users/configured-user.service.ts:1']);
+});
+
 test('flags open CORS, synchronize, console.log, and missing hooks', () => {
   const { json } = scan(repo);
   assert.equal(practice(json, 'cors').status, 'problem');
@@ -318,6 +331,25 @@ test('an explicit missing config is an error rather than an unconfigured scan', 
   const result = spawnSync(process.execPath, [script, repo, '--no-gh', `--config=${join(temp, 'missing.json')}`], { encoding: 'utf8' });
   assert.equal(result.status, 2);
   assert.match(result.stderr, /config/i);
+});
+
+test('reads UTF-8 BOM configs written by Windows PowerShell', () => {
+  const root = makeRepo('bom-config', { ...FILES,
+    'learn/learn.config.json': '\uFEFF' + FILES['learn/learn.config.json'],
+  });
+  const { json } = scan(root);
+  assert.equal(json.config.appPath, 'app');
+  assert.equal(json.summary.docEndpoints, 6);
+});
+
+test('invalid existing default configs fail rather than silently scanning with defaults', () => {
+  for (const [name, content] of [['broken', '{'], ['array', '[]'], ['null', 'null']]) {
+    const root = makeRepo(`invalid-config-${name}`, { ...FILES, 'learn/learn.config.json': content });
+    const result = spawnSync(process.execPath, [script, root, '--no-gh'], { encoding: 'utf8' });
+    assert.equal(result.status, 2, result.stderr);
+    assert.equal(result.stdout, '');
+    assert.match(result.stderr, /config/i);
+  }
 });
 
 test('does not report a missing repository when Git cannot be executed', () => {

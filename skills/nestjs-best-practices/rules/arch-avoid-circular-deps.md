@@ -77,7 +77,7 @@ export class OrdersService {
 }
 ```
 
-**Watch for barrel files.** A cycle can also come from `index.ts` files that re-export things. Do not import module or provider classes through a barrel, and never import a barrel from a file in the same folder (`cats/cats.controller.ts` must not import `'./'` or `'../cats'` to get `cats.service`). Import the file directly. The symptom is a provider that is `undefined` at startup.
+**Watch for barrel files.** A cycle can also come from `index.ts` files that re-export things. Inside a feature or context, import internal files directly instead of its own barrel (`cats/cats.controller.ts` must not import `'./'` or `'../cats'` to get `cats.service`). Across contexts, follow the declared public entry contract and keep its re-exports and dependencies acyclic. A public `index.ts` does not make circular dependencies safe. The symptom is a provider that is `undefined` at startup.
 
 **`forwardRef()` is a last resort.** If you cannot break the cycle yet, `forwardRef(() => OtherModule)` in `imports` and `@Inject(forwardRef(() => OtherService))` in the constructor let Nest start. The order in which the two are created is not fixed, so neither constructor may call the other. Treat it as a TODO, not a fix.
 
