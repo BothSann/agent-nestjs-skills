@@ -1,5 +1,5 @@
 {
-  "version": "1.0.2",
+  "version": "1.0.3",
   "organization": "NestJS Learn Skills",
   "date": "October 2026",
   "abstract": "Coaches the owner while they type a NestJS lesson by hand: next step on done, a help ladder on stuck, read-only review on check against project rules and nestjs-best-practices, standing exceptions (TSDoc, Swagger, migration files, tests on ask), and the ship flow to a PR.",

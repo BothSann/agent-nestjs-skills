@@ -4,7 +4,7 @@ description: Scan a NestJS app (or an empty repo) and offer the owner 3 real tas
 license: MIT
 metadata:
   author: thannsopheakboth
-  version: "1.0.2"
+  version: "1.0.3"
 ---
 
 # NestJS Learn: Pick a Task
@@ -36,7 +36,9 @@ Read these before you write anything to the owner:
 6. Offer 3. Mark one as **next**. Wait for the owner to pick.
 7. Picked an existing lesson ("finish" or "start lesson NN")? Do not write a ticket. Hand off as in "After the Owner Picks".
    New task: write `learn/NN-slug/TICKET.md` from [references/ticket-template.md](references/ticket-template.md), with `status: proposed` and the right `kind`.
-8. Hand off. Tell the owner: say **"write the lesson"** to go on.
+8. Hand off, by what was picked:
+   - in-progress lesson: to `nestjs-learn-coach`. Say the current step, then "Say **done**, **stuck**, or **check**."
+   - proposed lesson, or a new ticket you just wrote: to `nestjs-learn-write-lesson`. "Read the ticket, then say **write the lesson**."
 
 ## Usage
 

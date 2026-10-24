@@ -27,7 +27,7 @@ Each rule is short. The example shows the mistake it catches.
 - Every DTO used with `@Body()` is a class with validation decorators. An `interface` or `type` checks nothing at runtime.
 - The global `ValidationPipe` has `whitelist: true` (and usually `forbidNonWhitelisted: true`). Otherwise `{ "role": "admin" }` slips into the entity.
 - Never spread a DTO straight into an entity save when the entity has fields the user must not set (`role`, `isVerified`, `balance`).
-- A response never contains `password`, `passwordHash`, or refresh tokens. Use a response DTO or `@Exclude()` with `ClassSerializerInterceptor`.
+- A response never contains `password`, `passwordHash`, or refresh tokens. Send a response DTO with `@Expose()` fields, converted with `excludeExtraneousValues: true` (or `@SerializeOptions({ type: SomeResponseDto, excludeExtraneousValues: true })` when the handler returns an entity). `@Exclude()` on the entity is only a second guard.
 - Passwords are hashed with `bcrypt` or `argon2`. Never `sha256` alone.
 - A refresh token is stored as a hash, rotated on use, and the whole family is revoked when an old one comes back.
 - Login and "forgot password" answer the same way for a wrong email and a wrong password. No "user not found" leak.

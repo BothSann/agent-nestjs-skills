@@ -7,7 +7,7 @@ tags: api, dto, serialization, class-transformer
 
 ## Use DTOs and Serialization for API Responses
 
-Never return entity objects directly from controllers. Return a response DTO whose `@Expose()` fields are the full list of what the client may see, and convert with `excludeExtraneousValues: true`. Without that option, class-transformer copies every field of the source object, so `@Expose()` alone does not hide `passwordHash`. This prevents accidental exposure of sensitive fields and provides a stable API contract.
+Never send entity objects to the client as they are. What goes out must be a response DTO whose `@Expose()` fields are the full list of what the client may see, converted with `excludeExtraneousValues: true`. A handler may return an entity only when `@SerializeOptions({ type: SomeResponseDto, excludeExtraneousValues: true })` is on it, so `ClassSerializerInterceptor` turns the entity into that DTO before it is sent. Otherwise convert it yourself with `plainToInstance(SomeResponseDto, entity, { excludeExtraneousValues: true })`. Without that option, class-transformer copies every field of the source object, so `@Expose()` alone does not hide `passwordHash`. This prevents accidental exposure of sensitive fields and provides a stable API contract.
 
 **Incorrect (returning entities, manual spreading, or `@Expose()` without `excludeExtraneousValues`):**
 

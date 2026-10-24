@@ -3,7 +3,7 @@
 // Uses temp folders only. Never connects to a database: `create` is tested only where it refuses first.
 
 import { spawnSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { linkSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -156,6 +156,41 @@ test('prepare refuses a separate clone of the same project', () => {
   const clone = join(temp, `clone-${count}`);
   assert.equal(spawnSync('git', ['clone', '-q', a.main, clone]).status, 0);
   refuses(a.main, clone, /not a worktree of the main repository/);
+});
+
+test('prepare refuses a worktree in a child folder whose name starts with ..', () => {
+  const a = apps(`DATABASE_URL=${URL_MAIN}\n`);
+  const nested = join(a.main, '..lessons', '04-test');
+  git(a.main, 'worktree', 'add', '-q', '--detach', nested);
+  refuses(a.main, nested, /inside the main checkout/);
+});
+
+// The main .env and its link, then prepare; the main .env must not change
+function throughLink(makeLink) {
+  const a = apps(`DATABASE_URL=${URL_MAIN}\n`);
+  const mainEnv = join(a.main, '.env');
+  const before = readFileSync(mainEnv, 'utf8');
+  try {
+    makeLink(mainEnv, join(a.worktree, '.env'));
+  } catch (error) {
+    return error; // symlinks need extra rights on some Windows setups
+  }
+  const r = run('prepare', '--main-app', a.main, '--worktree-app', a.worktree, '--lesson', '04');
+  assert.equal(r.status, 0, r.err);
+  assert.match(r.err, /is a link; replacing it/);
+  assert.equal(readFileSync(mainEnv, 'utf8'), before);
+  assert.equal(lstatSync(join(a.worktree, '.env')).isSymbolicLink(), false);
+  assert.match(a.env(), /\/shop_lesson_04\?/);
+  return null;
+}
+
+test('prepare never writes through a hard-linked .env', () => {
+  assert.equal(throughLink((from, to) => linkSync(from, to)), null);
+});
+
+test('prepare never writes through a symlinked .env', (t) => {
+  const skipped = throughLink((from, to) => symlinkSync(from, to, 'file'));
+  if (skipped) t.skip(`cannot make a symlink here: ${skipped.code}`);
 });
 
 test('prepare accepts an app folder inside the lesson worktree', () => {

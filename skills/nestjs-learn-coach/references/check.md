@@ -41,7 +41,7 @@ Quick list. The full rules are in the files `code-quality.md` maps to. Cite the 
 | Module | providers listed, needed modules imported, only shared things exported, no `forwardRef` | `arch-feature-modules.md`, `arch-module-sharing.md`, `arch-avoid-circular-deps.md` |
 | Controller | HTTP only, one service call, right status code (`@HttpCode`), params parsed (`ParseUUIDPipe`) | `error-throw-http-exceptions.md`, `api-use-pipes.md` |
 | DTO | a class, decorators match the ticket, no `any`, nested objects use `@ValidateNested()` and `@Type()` | `security-validate-all-input.md` |
-| Response | response DTO, no entity, no password or token fields | `api-use-dto-serialization.md` |
+| Response | response DTO with `excludeExtraneousValues: true`; an entity only through `@SerializeOptions({ type, excludeExtraneousValues: true })`; no password or token fields | `api-use-dto-serialization.md` |
 | Service | business rules here, constructor injection, Nest exceptions, no `console.log` | `arch-single-responsibility.md`, `di-prefer-constructor-injection.md`, `devops-use-logging.md` |
 | Database | queries in a repository, transactions for multi-step writes, unique index plus `23505` to 409, no N+1 | `arch-use-repository-pattern.md`, `db-use-transactions.md`, `db-avoid-n-plus-one.md` |
 | Migration | matches the entity, has `down`, indexes the queries need | `db-use-migrations.md` |
