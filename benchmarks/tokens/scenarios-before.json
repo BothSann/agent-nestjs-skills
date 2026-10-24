@@ -1,0 +1,66 @@
+[
+  {
+    "id": "best-practice-lookup",
+    "skill": "nestjs-best-practices",
+    "files": [
+      "SKILL.md",
+      "rules/security-validate-all-input.md"
+    ]
+  },
+  {
+    "id": "pick-task-configured",
+    "skill": "nestjs-learn-pick-task",
+    "files": [
+      "SKILL.md",
+      "references/hard-rules.md",
+      "references/voice.md",
+      "references/layout.md",
+      "references/scoring.md",
+      "references/practice-tasks.md",
+      "references/ticket-template.md"
+    ]
+  },
+  {
+    "id": "write-lesson",
+    "skill": "nestjs-learn-write-lesson",
+    "files": [
+      "SKILL.md",
+      "references/hard-rules.md",
+      "references/layout.md",
+      "references/voice.md",
+      "references/project-config.md",
+      "references/code-quality.md",
+      "references/review-rules.md",
+      "references/worktree-run.md",
+      "references/readme-template.md",
+      "references/guide-template.md",
+      "references/check-yourself-template.md"
+    ]
+  },
+  {
+    "id": "coach-done",
+    "skill": "nestjs-learn-coach",
+    "files": [
+      "SKILL.md",
+      "references/hard-rules.md",
+      "references/voice.md",
+      "references/code-quality.md",
+      "references/review-rules.md",
+      "references/next-step.md",
+      "references/project-config.md"
+    ]
+  },
+  {
+    "id": "coach-check",
+    "skill": "nestjs-learn-coach",
+    "files": [
+      "SKILL.md",
+      "references/hard-rules.md",
+      "references/voice.md",
+      "references/code-quality.md",
+      "references/review-rules.md",
+      "references/check.md",
+      "references/project-config.md"
+    ]
+  }
+]
