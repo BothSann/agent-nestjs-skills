@@ -2,6 +2,8 @@
 
 Short. The owner reads it first.
 
+The npm commands below are examples. Use the project's package manager and existing scripts. For a lesson with no persistence, write "Lesson database: not applicable" and describe the tests actually run instead of copying the database proof sentence.
+
 ```markdown
 # Lesson 04: create user
 

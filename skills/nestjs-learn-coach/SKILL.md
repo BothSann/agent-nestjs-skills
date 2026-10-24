@@ -26,6 +26,7 @@ Always read first:
 3. None: say so. Offer `nestjs-learn-pick-task`.
 
 Read its `README.md` "Where you are now" to know the current step.
+Resolve commands through `references/project-config.md`, "Commands follow the project". Use its actual scripts and runner; a Bun/Vitest project uses `bun run test`, never `bun test`. For DDD lessons, review domain tests as plain TypeScript; do not require Nest DI or a database for pure domain code.
 Read its "Solution workspace" section for the worktree path, starting commit, and lesson database. Use the complete solution there when a comparison or hint needs it. If the worktree is gone, review against the ticket and the rules; do not recreate or overwrite a worktree during coaching.
 
 ## Router

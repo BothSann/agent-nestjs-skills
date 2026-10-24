@@ -245,6 +245,94 @@ test('an empty repo asks for a commit and the scaffold lesson', () => {
   assert.equal(json.summary.nextLessonNumber, 1);
 });
 
+// Cases found while exercising the skills against malnest (Bun, Vitest, DDD).
+test('detects Bun from packageManager and both Bun lockfile formats', () => {
+  for (const [name, pkg, lock] of [
+    ['declared', { packageManager: 'bun@1.4.3' }, 'package-lock.json'],
+    ['text-lock', {}, 'bun.lock'],
+    ['binary-lock', {}, 'bun.lockb'],
+  ]) {
+    const root = makeRepo(`bun-${name}`, {
+      'package.json': JSON.stringify({ ...pkg, dependencies: { '@nestjs/core': '^12.0.1' }, devDependencies: { vitest: '^4.1.2' } }),
+      [lock]: '',
+    });
+    const { json } = scan(root);
+    assert.equal(json.stack.packageManager, 'bun');
+    assert.equal(json.stack.testRunner, 'vitest');
+  }
+});
+
+test('uses a workspace packageManager, but lets explicit learn config win', () => {
+  const root = makeRepo('workspace-manager', {
+    ...FILES,
+    'package.json': JSON.stringify({ packageManager: 'bun@1.4.3' }),
+  });
+  assert.equal(scan(root).json.stack.packageManager, 'bun');
+  const path = join(root, 'learn', 'learn.config.json');
+  const config = JSON.parse(readFileSync(path, 'utf8'));
+  writeFileSync(path, JSON.stringify({ ...config, packageManager: 'pnpm' }));
+  assert.equal(scan(root).json.stack.packageManager, 'pnpm');
+});
+
+test('does not recommend enabling CORS when no browser access is configured', () => {
+  const root = makeRepo('cors-disabled', {
+    ...FILES,
+    'app/src/main.ts': 'const app = await NestFactory.create(AppModule); await app.listen(3000);',
+  });
+  const { json } = scan(root);
+  assert.equal(practice(json, 'cors').status, 'n/a');
+  assert.equal(json.summary.practicesMissing.includes('cors'), false);
+});
+
+test('reads an external config without creating learn files in the target', () => {
+  const root = makeRepo('external-config', {
+    'package.json': JSON.stringify({ packageManager: 'bun@1.4.3', dependencies: { '@nestjs/core': '^12.0.1' } }),
+    'docs/TASK_PLAN.md': '# Task Plan\n\n## M0. Foundation\n\n- [x] **T-01** Planning docs.\n- [ ] **T-02** Modular monolith skeleton.\n\n## M1. Identity\n\n- [ ] **T-07** Drizzle providers.\n',
+    'docs/REQUIREMENTS.md': '# Requirements\n\n## Scans\n\n| ID | Requirement | Rules |\n|---|---|---|\n| FR-01 | `POST /v1/scans` queues a scan. | BR-01 |\n| FR-05 | `GET /v1/scans/:id` returns a scan. | BR-04 |\n| FR-22 | `POST /v1/api-keys` creates a key. `GET /v1/api-keys` lists keys. | BR-26 |\n',
+  });
+  const configPath = join(temp, 'malnest-learn.config.json');
+  writeFileSync(configPath, JSON.stringify({ appPath: '.', buildOrderDoc: 'docs/TASK_PLAN.md', endpointDocs: ['docs/REQUIREMENTS.md'], shell: 'powershell', baseBranch: 'origin/main' }));
+  const { json } = scan(root, ['--no-gh', `--config=${configPath}`]);
+  assert.equal(json.blockers.includes('no_config'), false);
+  assert.equal(json.blockers.includes('no_build_order_doc'), false);
+  assert.equal(existsSync(join(root, 'learn')), false);
+  assert.deepEqual(json.planTasks.map(({ id, done, section }) => ({ id, done, section })), [
+    { id: 'T-01', done: true, section: 'M0. Foundation' },
+    { id: 'T-02', done: false, section: 'M0. Foundation' },
+    { id: 'T-07', done: false, section: 'M1. Identity' },
+  ]);
+  assert.deepEqual(short(json.endpoints.missing), ['POST /v1/scans', 'GET /v1/scans/:id', 'POST /v1/api-keys', 'GET /v1/api-keys']);
+});
+
+test('deduplicates documented routes and ignores fenced examples', () => {
+  const root = makeRepo('doc-examples', {
+    ...FILES,
+    'docs/scope.md': '# Scope\n\n## Users\n- `GET /api/v1/users/:id`\n- `GET /api/v1/users/:id` again\n\n```text\nGET /example-only\n```\n',
+  });
+  const { json } = scan(root);
+  assert.equal(json.summary.docEndpoints, 1);
+  assert.deepEqual(short(json.endpoints.done), ['GET /api/v1/users/:id']);
+});
+
+test('an explicit missing config is an error rather than an unconfigured scan', () => {
+  const result = spawnSync(process.execPath, [script, repo, '--no-gh', `--config=${join(temp, 'missing.json')}`], { encoding: 'utf8' });
+  assert.equal(result.status, 2);
+  assert.match(result.stderr, /config/i);
+});
+
+test('does not report a missing repository when Git cannot be executed', () => {
+  const result = spawnSync(process.execPath, [script, repo, '--no-gh', `--home=${join(repo, 'home')}`], {
+    encoding: 'utf8',
+    env: { ...process.env, PATH: join(temp, 'no-executables') },
+  });
+  assert.equal(result.status, 0, result.stderr);
+  const json = JSON.parse(result.stdout);
+  assert.equal(json.blockers.includes('git_unavailable'), true);
+  assert.equal(json.blockers.includes('no_git'), false);
+  assert.equal(json.blockers.includes('no_commits'), false);
+  assert.equal(json.git.hasCommits, null);
+});
+
 // The six shared reference files are copied into each nestjs-learn-* skill.
 // In this repo, all copies must match. Installed alone, the sibling skills are missing: skip.
 test('shared reference files match in every nestjs-learn skill', (t) => {

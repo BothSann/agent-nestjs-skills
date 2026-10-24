@@ -40,9 +40,11 @@ The first time a magic part shows up, show what it really does.
 
 ## One small check per step
 
+Use the project's package manager and runner (`project-config.md`, "Commands follow the project"). For Bun/Vitest, use `bun run test`, not `bun test`. Pure domain checks need neither Nest DI nor a database.
+
 Best checks, in order:
 
-1. `npx tsc --noEmit` — the code compiles.
+1. The installed compiler with `--noEmit --incremental false` — the code compiles without writing incremental files.
 2. The startup log: `Mapped {/api/v1/users, POST} route` — the route is wired.
 3. One curl — the behavior is right.
 4. One test — `npm test -- users.service`.

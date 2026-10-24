@@ -12,13 +12,14 @@ Project facts live here, not in the skills. Same skills, any NestJS app.
 | `appPath` | yes | folder with the app's `package.json` and `nest-cli.json`, relative to repo root | `apps/api` or `.` |
 | `sourceRoot` | no | source folder inside `appPath`. Default: `sourceRoot` from `nest-cli.json`, else `src` | `src` |
 | `lessonWorktreesPath` | no | root for lesson worktrees, outside the main repo. Default: sibling `<repo-name>-lessons` | `../shop-lessons` |
-| `buildOrderDoc` | no | doc with the endpoint list and build order. Without it, tasks come only from best-practice rules. | `docs/api-scope.md` |
+| `buildOrderDoc` | no | doc with a numbered build order or milestone task checklists. Without it, endpoint docs and practice hints still work, but task order is unknown. | `docs/TASK_PLAN.md` |
+| `endpointDocs` | no | extra docs with endpoint tables or backticked `METHOD /path` pairs, when requirements and the task plan are separate | `["docs/REQUIREMENTS.md"]` |
 | `docs` | no | more docs to read when writing a lesson | `["docs/architecture.md"]` |
 | `rulesDirs` | no | project coding rules (team lead or CTO). Win over everything else. | `[".claude/rules"]` |
 | `skillsDirs` | no | folders that hold the `nestjs-best-practices` skill | `[".claude/skills"]` |
 | `guidelines` | no | agent guideline files | `["CLAUDE.md"]` |
 | `nestDocsPath` | no | local clone of `docs.nestjs.com`, for exact API checks | `C:/Users/me/Desktop/docs.nestjs.com` |
-| `packageManager` | no | `npm`, `pnpm`, or `yarn`. Default: from the lockfile | `npm` |
+| `packageManager` | no | `npm`, `pnpm`, `yarn`, or `bun`. Default: app/root `package.json` `packageManager`, then the lockfile (`bun.lock` or `bun.lockb` included) | `bun` |
 | `orm` | no | `typeorm`, `prisma`, `drizzle`, `mikro-orm`, or `none`. Default: from `package.json` | `prisma` |
 | `migrationCommand` | no | how the app applies migrations | `npm run migration:run` |
 | `databaseUrlEnv` | no | env var with the Postgres URL. Default: `DATABASE_URL` | `DATABASE_URL` |
@@ -53,6 +54,21 @@ Each lesson uses `<lessonWorktreesPath>/NN-slug` for its complete solution. Real
 If `rulesDirs`, `skillsDirs`, or `guidelines` is missing, the scanner looks in the default places:
 `.claude/rules`, `.cursor/rules`, `.ai/rules`, `.claude/skills`, `.agents/skills`, `~/.claude/skills`, `CLAUDE.md`, `AGENTS.md` (in the repo root and in `appPath`).
 How the agent uses them: [code-quality.md](code-quality.md).
+
+## Commands follow the project
+
+Read `package.json` scripts and the project rules before copying a command from a skill example. Use the selected package manager for installs, scripts, generators, and checks. Do not create another manager's lockfile.
+
+| Manager | Run a script with arguments | Run an installed tool | Install from the lockfile in the lesson worktree |
+|---|---|---|---|
+| npm | `npm run <script> -- <args>` | `npx --no-install <tool> <args>` | `npm ci --ignore-scripts` |
+| pnpm | `pnpm run <script> <args>` | `pnpm exec <tool> <args>` | `pnpm install --frozen-lockfile --ignore-scripts` |
+| yarn | `yarn run <script> <args>` | `yarn run <tool> <args>` | Berry: `yarn install --immutable --mode=skip-build`; v1: `yarn install --frozen-lockfile --ignore-scripts` |
+| bun | `bun run <script> <args>` | `bun run <tool> <args>` | `bun install --frozen-lockfile --ignore-scripts` |
+
+For Bun projects using Vitest, run `bun run test`, not `bun test`: the latter selects Bun's own runner. Use `vi.fn()` / `vi.spyOn()` for Vitest and Jest helpers only for Jest. Choose a dev script that exists (for example `dev`, not an assumed `start:dev`). For read-only TypeScript checks, pass `--noEmit --incremental false` to the installed compiler; a project's `typecheck` script may otherwise write `.tsbuildinfo`.
+
+For a read-only trial, the scanner accepts `--config=<absolute-file>` outside the target repo. Paths inside that config still resolve against the target repo. This does not authorize writing tickets, changing the app, or treating proposed first-run facts as owner-confirmed.
 
 ## Full example (monorepo, Prisma)
 

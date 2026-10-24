@@ -2,6 +2,8 @@
 
 ## "check": read-only review
 
+Resolve the npm examples below with `project-config.md`, "Commands follow the project". In a Bun project, use `bun run tsc --noEmit --incremental false -p tsconfig.json` and existing `bun run` scripts. Inspect scripts before running: an aggregate check may write build output or incremental files. Keep DDD domain tests free of Nest and I/O; apply DI checks to Nest providers instead.
+
 1. Read the owner's files for this step or lesson. Use `git diff` against the base branch, plus `git status` for new files.
 2. Run read-only checks: `npx tsc --noEmit --incremental false -p tsconfig.json`, `npm run lint` without `--fix` (check the script first), the scanner for route paths and stubs ([next-step.md](next-step.md), "Check a route"), a `GET` curl to their local server. A curl that writes (`POST`, `PUT`, `PATCH`, `DELETE`): give the command, the owner runs it and pastes the output. Run their tests only when they cannot hit the owner's dev database (see hard-rules.md).
 3. Compare with the ticket's criteria, then the rules in the order in [code-quality.md](code-quality.md): project rules first, then [review-rules.md](review-rules.md), then the `nestjs-best-practices` rule files mapped to the layers the owner touched. The lesson solution is a guide, not the only valid answer.

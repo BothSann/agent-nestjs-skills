@@ -90,7 +90,7 @@ Each rule is short. The example shows the mistake it catches.
 
 ## Tests
 
-- Unit tests build the class with `Test.createTestingModule()` and mock its dependencies with `useValue`.
+- Unit tests for Nest providers use `Test.createTestingModule()` and replace dependencies with `useValue`. Plain domain classes use the project's test runner directly, without a Nest container or database. Use the project's runner helpers (`vi` for Vitest, `jest` for Jest).
 - E2E tests boot the real app with the same global pipes, filters, and prefix as `main.ts`. Put that setup in one function both use.
 - E2E tests run against a test database, never the dev database.
 - Every acceptance criterion and every refusal has a test.

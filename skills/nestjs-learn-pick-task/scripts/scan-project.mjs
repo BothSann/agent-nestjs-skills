@@ -5,6 +5,7 @@
 // Usage: node scan-project.mjs <repo-root> [--no-gh] [--merged-prs=<file.json>] [--home=<dir>]
 //
 // --no-gh          skip `gh pr list` (the merged-lesson check)
+// --config=FILE    read config from FILE instead of <repo-root>/learn/learn.config.json
 // --merged-prs=F   read merged PRs from a JSON file instead of `gh` (for tests)
 // --home=DIR       look for ~/.claude/skills under DIR instead of the real home folder (for tests)
 //
@@ -130,8 +131,16 @@ function lineOf(text, index) {
 
 // ---------- config and app ----------
 
-function loadConfig(root) {
-  const path = join(root, 'learn', 'learn.config.json');
+function loadConfig(root, configPath) {
+  const path = configPath ?? join(root, 'learn', 'learn.config.json');
+  if (configPath) {
+    const config = readJson(path);
+    if (!config || typeof config !== 'object' || Array.isArray(config)) {
+      log(`cannot read config object: ${path}`);
+      process.exit(2);
+    }
+    return config;
+  }
   if (!existsSync(path)) return null;
   return readJson(path);
 }
@@ -157,8 +166,13 @@ function detectStack(root, appDir, config, pkg) {
   const deps = allDeps(pkg);
   const lockAt = (name) => existsSync(join(appDir, name)) || existsSync(join(root, name));
   let packageManager = config?.packageManager ?? null;
+  const declared = pkg?.packageManager ?? readJson(join(root, 'package.json'))?.packageManager;
+  if (!packageManager && typeof declared === 'string') {
+    packageManager = declared.match(/^(npm|pnpm|yarn|bun)(?:@|$)/)?.[1] ?? null;
+  }
   if (!packageManager) {
-    if (lockAt('pnpm-lock.yaml')) packageManager = 'pnpm';
+    if (lockAt('bun.lock') || lockAt('bun.lockb')) packageManager = 'bun';
+    else if (lockAt('pnpm-lock.yaml')) packageManager = 'pnpm';
     else if (lockAt('yarn.lock')) packageManager = 'yarn';
     else if (lockAt('package-lock.json')) packageManager = 'npm';
   }
@@ -385,15 +399,30 @@ function scanRoutes(root, tsFiles, classIndex, boot) {
 function parseDoc(text) {
   const endpoints = [];
   const buildOrder = [];
+  const planTasks = [];
   let section = null;
   let inBuildOrder = false;
+  let fence = null;
 
   for (const rawLine of text.split(/\r?\n/)) {
     const line = rawLine.trim();
+    const marker = line.match(/^(`{3,}|~{3,})/);
+    if (marker) {
+      if (!fence) fence = marker[1];
+      else if (marker[1][0] === fence[0] && marker[1].length >= fence.length) fence = null;
+      continue;
+    }
+    if (fence) continue;
     const heading = line.match(/^#{2,3}\s+(.*)$/);
     if (heading) {
       section = heading[1].trim();
       inBuildOrder = /build order/i.test(section);
+      continue;
+    }
+
+    const task = line.match(/^[-*]\s+\[([ xX])\]\s+(?:\*\*)?([A-Z]+-\d+)(?:\*\*)?\s+(.+)$/);
+    if (task) {
+      planTasks.push({ id: task[2], title: task[3], done: task[1].toLowerCase() === 'x', section });
       continue;
     }
 
@@ -414,6 +443,11 @@ function parseDoc(text) {
           auth: cells[2] ?? null,
           does: cells[3] ?? null,
         });
+      } else {
+        // Requirement tables can put several `METHOD /path` pairs in a prose cell.
+        for (const m of line.matchAll(/`(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\s+(\/[^\s`|]*)`/g)) {
+          endpoints.push({ section, method: m[1], path: m[2], auth: null, does: cells[1] ?? null });
+        }
       }
       continue;
     }
@@ -422,7 +456,17 @@ function parseDoc(text) {
     const plain = line.match(/^[-*]?\s*`?(GET|POST|PUT|PATCH|DELETE)\s+(\/[^\s`]*)`?/);
     if (plain) endpoints.push({ section, method: plain[1], path: plain[2], auth: null, does: null });
   }
-  return { endpoints, buildOrder };
+  return { endpoints, buildOrder, planTasks };
+}
+
+function uniqueEndpoints(endpoints) {
+  const seen = new Set();
+  return endpoints.filter((endpoint) => {
+    const key = `${endpoint.method} ${normalizePath(endpoint.path)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 // `/api/v1/users/{id}` and `api/v1/users/:id` are the same path.
@@ -563,7 +607,8 @@ function scanPractices(root, srcDir, tsFiles, stack, data, tests) {
   const openCors = find(/enableCors\(\s*\)|cors\s*:\s*true/);
   const cors = find(/enableCors\(/);
   if (openCors.length) add('cors', 'security-headers-cors-csrf', 'problem', openCors, 'CORS allows every origin');
-  else add('cors', 'security-headers-cors-csrf', cors.length ? 'ok' : 'missing', cors);
+  else add('cors', 'security-headers-cors-csrf', cors.length ? 'ok' : 'n/a', cors,
+    cors.length ? null : 'No CORS setup found. Keep it disabled unless browser clients need cross-origin access; confirm the project policy.');
 
   const configCalls = calls(/ConfigModule\.forRoot(?:Async)?\(/);
   const configAt = configCalls.map((c) => c.at).slice(0, 3);
@@ -699,7 +744,12 @@ function scanQualitySources(root, appDir, config, home) {
 function scanGit(root) {
   const run = (args) => spawnSync('git', ['-C', root, ...args], { encoding: 'utf8', timeout: 15_000 });
   const inside = run(['rev-parse', '--is-inside-work-tree']);
-  if (inside.status !== 0) return null;
+  if (inside.status !== 0) {
+    if (inside.error || inside.status === null || existsSync(join(root, '.git'))) {
+      return { branch: null, hasCommits: null, changedFiles: null, error: 'Git inspection unavailable; check executable access, repository permissions, and safe-directory settings.' };
+    }
+    return null;
+  }
   const head = run(['rev-parse', '--verify', '--quiet', 'HEAD']);
   const branch = run(['rev-parse', '--abbrev-ref', 'HEAD']);
   const status = run(['status', '--porcelain']);
@@ -759,11 +809,13 @@ function main() {
     process.exit(2);
   }
 
-  const config = loadConfig(root);
+  const configArg = args.find((a) => a.startsWith('--config='));
+  const config = loadConfig(root, configArg ? resolve(configArg.slice('--config='.length)) : null);
   if (!config) blockers.push('no_config');
 
   const git = scanGit(root);
   if (!git) blockers.push('no_git');
+  else if (git.error) blockers.push('git_unavailable');
   else if (!git.hasCommits) blockers.push('no_commits');
 
   const appPath = findAppPath(root, config);
@@ -791,7 +843,19 @@ function main() {
   const docPath = config?.buildOrderDoc ?? null;
   const docText = docPath ? readText(join(root, docPath)) : null;
   if (!docText) blockers.push('no_build_order_doc');
-  const doc = docText ? parseDoc(docText) : { endpoints: [], buildOrder: [] };
+  const doc = docText ? parseDoc(docText) : { endpoints: [], buildOrder: [], planTasks: [] };
+  const endpointDocPaths = config?.endpointDocs ?? [];
+  for (const path of endpointDocPaths) {
+    if (path === docPath) continue;
+    const text = readText(join(root, path));
+    if (text === null) {
+      log(`endpoint doc not readable: ${path}`);
+      blockers.push('no_endpoint_doc');
+      continue;
+    }
+    doc.endpoints.push(...parseDoc(text).endpoints);
+  }
+  doc.endpoints = uniqueEndpoints(doc.endpoints);
   const endpoints = matchEndpoints(doc.endpoints, routes, routerModule);
 
   const data = scanData(root, appDir, srcFiles, allFiles);
@@ -817,6 +881,7 @@ function main() {
     practices,
     buildOrderDoc: docPath,
     buildOrder: doc.buildOrder,
+    planTasks: doc.planTasks,
     endpoints,
     lessons,
     qualitySources,

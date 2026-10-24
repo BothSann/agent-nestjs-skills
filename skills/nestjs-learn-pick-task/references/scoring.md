@@ -12,6 +12,7 @@ From the scan JSON:
 | `lessons` with `status: proposed` | "Start lesson NN" (ticket exists, no solution yet) |
 | `endpoints.stubs` | Replace the stub with real code |
 | `endpoints.missing` | Build the endpoint |
+| `planTasks` with `done: false` | The earliest allowed task in the project's milestone plan, split into small slices if needed |
 | Tables the doc needs but `tables` lacks | Entity or schema + migration (only if an endpoint needs it next) |
 | `practices` with `missing` or `problem` | One practice lesson each, from [practice-tasks.md](practice-tasks.md), after you confirm the hint |
 
@@ -30,6 +31,8 @@ A task cannot start if what it needs is missing.
 | `rate-limiting` practice on login | the login endpoint |
 
 Read the endpoint's "Does" column and the build order to find these.
+
+An explicit project plan wins over the scores below. Finish required foundation work before suggesting later API endpoints. Do not turn a whole milestone into one lesson. Checklist ticks are the plan's claims; confirm relevant evidence before calling a task built. If the plan says domain first, keep that order and use plain domain tests. Disabled CORS is valid for an API-to-API app; a `cors: n/a` hint is not a missing-security task.
 
 ## 3. Rank
 

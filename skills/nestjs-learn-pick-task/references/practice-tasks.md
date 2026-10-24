@@ -19,7 +19,7 @@ Before you offer one:
 | `shutdown-hooks` | missing | `enableShutdownHooks()`, readiness off in `beforeApplicationShutdown`, pool closes on `SIGTERM` | S | lifecycle hooks and their order | `devops-graceful-shutdown.md` |
 | `health-checks` | missing | `@nestjs/terminus`: `/health/live` and `/health/ready` with a database check | S | health indicators, live vs ready | `micro-use-health-checks.md` |
 | `security-headers` | missing | `app.useSecurityHeaders()` (or `helmet`) | S | what each header blocks | `security-headers-cors-csrf.md` |
-| `cors` | missing / problem | `enableCors({ origin: [...], credentials: true })` from config | S | origins, preflight, why `enableCors()` alone allows every site | `security-headers-cors-csrf.md` |
+| `cors` | problem | Restrict origins to the project's allowlist, or disable CORS if no cross-origin browser client needs it; credentials only when required | S | origins, preflight, why `enableCors()` alone allows every site | `security-headers-cors-csrf.md` |
 | `rate-limiting` | missing | `ThrottlerModule` global, a strict limit on login | S | guards, `@Throttle`, `@SkipThrottle` | `security-rate-limiting.md` |
 | `exception-filter` | missing | One global filter with `HttpAdapterHost`, one error shape, Postgres `23505` to `409` | M | filters, `APP_FILTER`, the error shape clients see | `error-use-exception-filters.md` |
 | `migrations` | problem (`synchronize: true`) | Turn off `synchronize`, make the first migration, add the migration script | M | migrations, why `synchronize` can drop data | `db-use-migrations.md` |

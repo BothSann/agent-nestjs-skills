@@ -9,6 +9,8 @@ tags: testing, unit-tests, mocking, jest
 
 Use `@nestjs/testing` module to create isolated test environments with mocked dependencies. This ensures your tests run fast, don't depend on external services, and properly test your business logic in isolation.
 
+This applies to Nest providers and DI wiring. Pure domain classes (aggregates, value objects, domain policies) need plain tests with the project's runner, without Nest or a database. Constructing such a class directly is correct; do not introduce a Nest dependency into the domain to follow this rule. Keep the project's package manager too: a Bun project using Vitest runs `bun run test`, not `bun test`.
+
 **Incorrect (manual instantiation bypassing DI):**
 
 ```typescript

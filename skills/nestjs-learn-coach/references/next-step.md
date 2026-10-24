@@ -4,6 +4,8 @@
 
 Run the step's check yourself (you, the agent), if it is read-only:
 
+Use the package manager and scripts from `project-config.md`, "Commands follow the project"; npm examples are not fixed commands. For Bun, the compiler check is `bun run tsc --noEmit --incremental false -p tsconfig.json`.
+
 | Step kind | Quick check |
 |---|---|
 | Branch | `git status`, `git log --oneline -1` |
@@ -70,7 +72,7 @@ Why: the entity has `passwordHash`. A response DTO lists only the fields the cli
 
 Check:
 
-    npx tsc --noEmit
+    npx --no-install tsc --noEmit --incremental false -p tsconfig.json
 
 You should see no output.
 
