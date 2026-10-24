@@ -84,7 +84,11 @@ function linkInfo(path) {
 }
 
 function dbName(url) {
-  return decodeURIComponent(new URL(url).pathname.slice(1));
+  const parsed = new URL(url);
+  if (!['postgres:', 'postgresql:'].includes(parsed.protocol)) {
+    fail('lesson-db supports PostgreSQL URLs only. Use the project\'s native tools to isolate another database engine.');
+  }
+  return decodeURIComponent(parsed.pathname.slice(1));
 }
 
 function withDb(url, name) {

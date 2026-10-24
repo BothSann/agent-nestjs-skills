@@ -5,6 +5,10 @@
 Project facts live here, not in the skills. Same skills, any NestJS app.
 `learn/` is git-ignored, so the config stays personal.
 
+## Project fit
+
+Use these skills for NestJS projects, including simple CRUD apps, modular monoliths, and monorepos. Do not require DDD, a particular package manager, test runner, ORM, auth scheme, database engine, document name, task-ID format, or folder layout. Examples show shapes to adapt, not a stack to install. Use `appPath` and `sourceRoot` for custom layouts. If automated detection cannot understand the project, report what is unknown and inspect its rules and scripts instead of changing the project to fit the scanner.
+
 ## Fields
 
 | Field | Required | Means | Example |
@@ -20,7 +24,8 @@ Project facts live here, not in the skills. Same skills, any NestJS app.
 | `guidelines` | no | agent guideline files | `["CLAUDE.md"]` |
 | `nestDocsPath` | no | local clone of `docs.nestjs.com`, for exact API checks | `C:/Users/me/Desktop/docs.nestjs.com` |
 | `packageManager` | no | `npm`, `pnpm`, `yarn`, or `bun`. Default: app/root `package.json` `packageManager`, then the lockfile (`bun.lock` or `bun.lockb` included) | `bun` |
-| `orm` | no | `typeorm`, `prisma`, `drizzle`, `mikro-orm`, or `none`. Default: from `package.json` | `prisma` |
+| `testRunner` | no | override runner detection when scripts wrap a tool or the runner is custom. Otherwise inspect the test script, then app/workspace Jest or Vitest dependencies. `null` means unknown, not missing tests. | `jest`, `vitest`, `bun`, `node`, or a custom name |
+| `orm` | no | `typeorm`, `prisma`, `drizzle`, `mikro-orm`, `mongoose`, or `none`. Default: from the app's `package.json`; preserve other project-specific tools when configured. | `prisma` |
 | `migrationCommand` | no | how the app applies migrations | `npm run migration:run` |
 | `databaseUrlEnv` | no | env var with the Postgres URL. Default: `DATABASE_URL` | `DATABASE_URL` |
 | `generator` | no | command prefix to make new files | `npx nest g` |
@@ -40,9 +45,13 @@ Project facts live here, not in the skills. Same skills, any NestJS app.
 | `tsdoc` | TSDoc comments in the owner's files, after their code works |
 | `swagger` | `@nestjs/swagger` decorators on DTOs and controllers |
 
-## The lesson database
+## Lesson persistence
 
-Each lesson uses its own Postgres database on the owner's server, next to the owner's database:
+Only lessons that use persistence need isolated storage. Keep the project's engine: PostgreSQL, another SQL database, MongoDB, or SQLite. Do not migrate to PostgreSQL to use the skills. A lesson with no persistence records "database: not applicable".
+
+The bundled `lesson-db.mjs` helper is for PostgreSQL URLs only. For other engines, use the project's native tools to prepare a separate lesson database or file, then prove the app and tests target it. Never run PostgreSQL commands against another engine.
+
+For PostgreSQL, each lesson uses its own database on the owner's server, next to the owner's database:
 
 - Name: `<owner's database name>_lesson_<NN>`. Owner uses `shop`; lesson 04 uses `shop_lesson_04`.
 - The URL is the owner's `databaseUrlEnv` value with only the database name swapped. User, password, host, and port stay the same.
@@ -66,7 +75,7 @@ Read `package.json` scripts and the project rules before copying a command from 
 | yarn | `yarn run <script> <args>` | `yarn run <tool> <args>` | Berry: `yarn install --immutable --mode=skip-build`; v1: `yarn install --frozen-lockfile --ignore-scripts` |
 | bun | `bun run <script> <args>` | `bun run <tool> <args>` | `bun install --frozen-lockfile --ignore-scripts` |
 
-For Bun projects using Vitest, run `bun run test`, not `bun test`: the latter selects Bun's own runner. Use `vi.fn()` / `vi.spyOn()` for Vitest and Jest helpers only for Jest. Choose a dev script that exists (for example `dev`, not an assumed `start:dev`). For read-only TypeScript checks, pass `--noEmit --incremental false` to the installed compiler; a project's `typecheck` script may otherwise write `.tsbuildinfo`.
+For Bun projects using Vitest, run `bun run test`, not `bun test`: the latter selects Bun's own runner. A project intentionally using Bun's native runner keeps it. Use `vi.fn()` / `vi.spyOn()` for Vitest and Jest helpers only for Jest; other runners keep their own APIs. Choose a dev script that exists (for example `dev`, not an assumed `start:dev`). For read-only TypeScript checks, pass `--noEmit --incremental false` to the installed compiler; a project's `typecheck` script may otherwise write `.tsbuildinfo`.
 
 For a read-only trial, the scanner accepts `--config=<absolute-file>` outside the target repo. Paths inside that config still resolve against the target repo. This does not authorize writing tickets, changing the app, or treating proposed first-run facts as owner-confirmed.
 

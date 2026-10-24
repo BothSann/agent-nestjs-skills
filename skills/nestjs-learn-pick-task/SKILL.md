@@ -79,10 +79,10 @@ Main keys (full list in the script):
 | `tables` | entities, Prisma models, Drizzle tables |
 | `migrations` | TypeORM migration classes and SQL migration files |
 | `classes` | per feature folder: controllers, services, dtos, entities, guards ... |
-| `tests` | unit and e2e spec files and test counts. `unit.onlyDefault`: only the generated `app.controller.spec.ts` |
+| `tests` | unit `.spec` / `.test` files and e2e `.e2e-spec`, `.e2e.spec`, or `.e2e.test` files (JS or TS), plus test counts. `unit.onlyDefault`: only the generated `app.controller.spec.ts` |
 | `practices` | best-practice hints: `id`, `rule` (a `nestjs-best-practices` rule file), `status` (`ok`, `missing`, `problem`, `n/a`), `evidence`, `note` |
 | `buildOrder` | numbered list under the "Build order" heading of `buildOrderDoc` |
-| `planTasks` | ID-tagged milestone checklist entries (for example `- [ ] **T-02** ...`) with `id`, `title`, `done`, and `section`; these are doc claims, not proof the code works |
+| `planTasks` | Markdown checklist entries with `id` (optional, otherwise `null`), `title`, `done`, and `section`; supports plain tasks and IDs such as `API-42` or `#123`. These are doc claims, not proof the code works. |
 | `endpoints.done` / `.stubs` / `.missing` | doc endpoints split by what the routes show |
 | `lessons` | `learn/NN-*` folders with `status`, `kind`, `branch`, plus `mergedPr` when a merged PR matches |
 | `qualitySources` | project rule files, the `nestjs-best-practices` skill (path, version, rule count), guideline files, `nestDocs` |

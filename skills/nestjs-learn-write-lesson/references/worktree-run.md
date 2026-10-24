@@ -38,6 +38,8 @@ npx @nestjs/cli@latest new . --package-manager <packageManager> --skip-git --str
 
 If this ticket is pure domain logic or module wiring with no database use, record "database: not applicable" and skip database creation and migration steps. Run the relevant tests without adding database setup. Keep isolation checks for any other services the lesson actually uses.
 
+Use the project's existing database engine. The helper and `createdb` examples below are PostgreSQL-specific; for other engines use native tools to create an isolated lesson database or file, then continue with the same runtime-target proof. Do not install PostgreSQL for a project that uses another engine.
+
 Lesson database name: `<owner's database name>_lesson_<NN>`. Example: `shop_lesson_04`. See `project-config.md`.
 
 Use [`scripts/lesson-db.mjs`](../scripts/lesson-db.mjs) in this skill. It never prints passwords or full URLs, works the same from PowerShell and bash, and refuses any name without `_lesson_<NN>`. It never drops anything.
@@ -59,7 +61,7 @@ No Postgres on this app (MongoDB, SQLite)? Use the same idea: a separate databas
 
 ## 4. Prepare the worktree environment
 
-`prepare` already set the database URL. In the worktree `.env`, also set:
+The helper (PostgreSQL) or native setup (other engines) must already have set the isolated database target, when this lesson needs one. In the worktree `.env`, also set:
 
 ```dotenv
 PORT=<free port>
@@ -76,7 +78,7 @@ Check every place a database URL can come from, and make each one point at the l
 
 Then prove it twice:
 
-1. `lesson-db.mjs check` says the worktree `.env` points at `<name>_lesson_<NN>`.
+1. For PostgreSQL, `lesson-db.mjs check` says the worktree `.env` points at `<name>_lesson_<NN>`. For another engine, verify the isolated database name or file path with the project's native tooling instead.
 2. Run a one-line script in the worktree that loads config the way the app does (same `ConfigModule` options, same env files, same shell) and prints **only the database name**. It must also print `<name>_lesson_<NN>`. The `.env` alone is not proof: a shell env var or a test env file can win over it.
 
 Other outside services:

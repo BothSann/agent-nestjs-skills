@@ -164,9 +164,11 @@ function findAppPath(root, config) {
 
 function detectStack(root, appDir, config, pkg) {
   const deps = allDeps(pkg);
+  const workspace = readJson(join(root, 'package.json'));
+  const tooling = { ...allDeps(workspace), ...deps };
   const lockAt = (name) => existsSync(join(appDir, name)) || existsSync(join(root, name));
   let packageManager = config?.packageManager ?? null;
-  const declared = pkg?.packageManager ?? readJson(join(root, 'package.json'))?.packageManager;
+  const declared = pkg?.packageManager ?? workspace?.packageManager;
   if (!packageManager && typeof declared === 'string') {
     packageManager = declared.match(/^(npm|pnpm|yarn|bun)(?:@|$)/)?.[1] ?? null;
   }
@@ -186,13 +188,20 @@ function detectStack(root, appDir, config, pkg) {
     else orm = 'none';
   }
   const installed = readJson(join(appDir, 'node_modules', '@nestjs', 'core', 'package.json'))?.version ?? null;
+  const testScript = pkg?.scripts?.test ?? workspace?.scripts?.test ?? '';
+  const testRunner = config?.testRunner
+    ?? (/\bvitest\b/.test(testScript) ? 'vitest'
+      : /\bjest\b/.test(testScript) ? 'jest'
+        : /\bbun\s+test\b/.test(testScript) ? 'bun'
+          : /\bnode\s+--test\b/.test(testScript) ? 'node'
+            : tooling.vitest ? 'vitest' : tooling.jest ? 'jest' : null);
   return {
     nestVersion: deps['@nestjs/core'] ?? null,
     nestInstalled: installed,
     packageManager,
     orm,
     platform: deps['@nestjs/platform-fastify'] ? 'fastify' : 'express',
-    testRunner: deps.vitest ? 'vitest' : deps.jest ? 'jest' : null,
+    testRunner,
     nodeModulesInstalled: isDir(join(appDir, 'node_modules')),
     packages: KNOWN_PACKAGES.filter((name) => deps[name]),
     scripts: Object.keys(pkg?.scripts ?? {}).sort(),
@@ -314,7 +323,7 @@ function scanClasses(srcDir, tsFiles) {
   const byFeature = {};
   for (const file of tsFiles) {
     const name = file.split(sep).pop();
-    if (name.endsWith('.spec.ts')) continue;
+    if (testKind(name)) continue;
     const kind = CLASS_KINDS.find(([suffix]) => name.endsWith(suffix));
     if (!kind) continue;
     const feature = featureOf(srcDir, file);
@@ -352,7 +361,7 @@ function joinPath(...parts) {
 function scanRoutes(root, tsFiles, classIndex, boot) {
   const routes = [];
   for (const file of tsFiles) {
-    if (!file.endsWith('.ts') || file.endsWith('.spec.ts')) continue;
+    if (!file.endsWith('.ts') || testKind(file)) continue;
     const text = readText(file) ?? '';
     const ctrl = text.match(/@Controller\(([^)]*)\)\s*(?:@[\s\S]*?)?export\s+class\s+(\w+)/);
     if (!ctrl) continue;
@@ -413,16 +422,17 @@ function parseDoc(text) {
       continue;
     }
     if (fence) continue;
-    const heading = line.match(/^#{2,3}\s+(.*)$/);
+    const heading = line.match(/^#{1,6}\s+(.*)$/);
     if (heading) {
       section = heading[1].trim();
       inBuildOrder = /build order/i.test(section);
       continue;
     }
 
-    const task = line.match(/^[-*]\s+\[([ xX])\]\s+(?:\*\*)?([A-Z]+-\d+)(?:\*\*)?\s+(.+)$/);
+    const task = line.match(/^[-*+]\s+\[([ xX])\]\s+(.+)$/);
     if (task) {
-      planTasks.push({ id: task[2], title: task[3], done: task[1].toLowerCase() === 'x', section });
+      const identified = task[2].match(/^(?:\*\*|`)?([A-Za-z][\w]*-\d+|#\d+)(?:\*\*|`)?\s+(.+)$/);
+      planTasks.push({ id: identified?.[1] ?? null, title: identified?.[2] ?? task[2], done: task[1].toLowerCase() === 'x', section });
       continue;
     }
 
@@ -535,11 +545,16 @@ function scanData(root, appDir, tsFiles, allFiles) {
 
 // ---------- tests ----------
 
+function testKind(file) {
+  if (/\.e2e[-.](?:spec|test)\.[cm]?[jt]sx?$/.test(file)) return 'e2e';
+  return /\.(?:spec|test)\.[cm]?[jt]sx?$/.test(file) ? 'unit' : null;
+}
+
 function scanTests(root, srcDir, allFiles) {
   const out = { unit: { files: [], testCalls: 0 }, e2e: { files: [], testCalls: 0 } };
   for (const file of allFiles) {
     const name = file.split(sep).pop();
-    const kind = name.endsWith('.e2e-spec.ts') ? 'e2e' : name.endsWith('.spec.ts') ? 'unit' : null;
+    const kind = testKind(name);
     if (!kind) continue;
     const text = readText(file) ?? '';
     out[kind].files.push(toPosix(relative(root, file)));
@@ -557,7 +572,7 @@ function scanTests(root, srcDir, allFiles) {
 // confirm by reading the file before you offer a lesson.
 function scanPractices(root, srcDir, tsFiles, stack, data, tests) {
   const sources = tsFiles
-    .filter((f) => !f.endsWith('.spec.ts'))
+    .filter((f) => !testKind(f))
     .map((f) => ({ file: toPosix(relative(root, f)), text: readText(f) ?? '' }));
   const find = (regex, limit = 3) => {
     const hits = [];
@@ -834,7 +849,7 @@ function main() {
   const tsFiles = allFiles.filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'));
   const srcFiles = tsFiles.filter((f) => !relative(srcDir, f).startsWith('..'));
 
-  const classIndex = indexClasses(srcFiles);
+  const classIndex = indexClasses(srcFiles.filter((file) => !testKind(file)));
   const boot = readBootstrap(srcDir);
   const routes = nestApp ? scanRoutes(root, srcFiles, classIndex, boot) : [];
   const routerModule = srcFiles.some((f) => /RouterModule\.register\(/.test(readText(f) ?? ''));

@@ -120,6 +120,19 @@ test('create refuses the owner database before it connects', () => {
   assert.match(r.err, /refusing/);
 });
 
+test('the PostgreSQL helper refuses other engines before writing or connecting', () => {
+  for (const url of ['mongodb://localhost/shop_lesson_04', 'mysql://localhost/shop_lesson_04', 'file:///shop_lesson_04']) {
+    const a = apps(`DATABASE_URL=${url}\n`, 'PORT=4000\n');
+    const prepared = run('prepare', '--main-app', a.main, '--worktree-app', a.worktree, '--lesson', '04');
+    assert.equal(prepared.status, 1);
+    assert.match(prepared.err, /PostgreSQL URLs only/);
+    assert.equal(a.env(), 'PORT=4000\n');
+    const created = run('create', '--worktree-app', a.main);
+    assert.equal(created.status, 1);
+    assert.match(created.err, /PostgreSQL URLs only/);
+  }
+});
+
 // prepare must never write the owner's own .env
 function refuses(main, worktree, reason) {
   const before = readFileSync(join(main, '.env'), 'utf8');

@@ -1,6 +1,6 @@
 ---
 name: nestjs-learn-write-lesson
-description: Turn a picked NestJS learning ticket into a full lesson - build and test the complete solution in a separate Git worktree against its own Postgres lesson database, following project rules and the nestjs-best-practices skill, and write README.md, GUIDE.md, and check-yourself.md under learn/ in the main repo. Give step 1 only. Use when the owner says "write the lesson", "build lesson 04", "the ticket is ok, go on", or confirms a proposed ticket. Never writes the app code the owner should type in their checkout. Use nestjs-learn-pick-task to pick a task and nestjs-learn-coach to review typed code instead.
+description: Turn a picked NestJS learning ticket into a full lesson - build and test the complete solution in a separate Git worktree with isolated persistence when needed, following project rules and the nestjs-best-practices skill, and write README.md, GUIDE.md, and check-yourself.md under learn/ in the main repo. Give step 1 only. Use when the owner says "write the lesson", "build lesson 04", "the ticket is ok, go on", or confirms a proposed ticket. Never writes the app code the owner should type in their checkout. Use nestjs-learn-pick-task to pick a task and nestjs-learn-coach to review typed code instead.
 license: MIT
 metadata:
   author: thannsopheakboth
@@ -10,7 +10,7 @@ metadata:
 # NestJS Learn: Write the Lesson
 
 The owner picked a task. `TICKET.md` exists. Now build the lesson they will follow.
-Build the complete app solution in a separate lesson worktree, prove it there against a separate lesson database, then teach it one step at a time. Keep the lesson docs in the main repo's `learn/NN-slug/`.
+Build the complete app solution in a separate lesson worktree, prove it there with isolated persistence only when needed, then teach it one step at a time. Keep the project's stack and layout; do not impose the examples' ORM, runner, or architecture. Keep the lesson docs in the main repo's `learn/NN-slug/`.
 
 Read these first:
 
@@ -32,7 +32,7 @@ Read these first:
    - Read one sibling file of each layer you will touch. Example: the current `auth.controller.ts` before a new controller, and the exception filter before writing error answers.
    - Map the ticket to `nestjs-best-practices` rule files with the table in `code-quality.md`. Read only those.
    - Check version-sensitive calls in the docs (`nestDocsPath` clone, else docs.nestjs.com) and in the installed `.d.ts` files.
-4. **Prepare the worktree and baseline.** Follow [references/worktree-run.md](references/worktree-run.md). Record the starting commit and account for uncommitted changes. If the lesson uses persistence, make its database with [scripts/lesson-db.mjs](scripts/lesson-db.mjs) and point every database config at it; otherwise record the database as not applicable. Run baseline tests before building.
+4. **Prepare the worktree and baseline.** Follow [references/worktree-run.md](references/worktree-run.md). Record the starting commit and account for uncommitted changes. If the lesson uses persistence, isolate it with [scripts/lesson-db.mjs](scripts/lesson-db.mjs) for PostgreSQL or the project's native tools for another engine, and point every database config at it; otherwise record the database as not applicable. Run baseline tests before building.
 5. **Build and prove the solution there.** Write the complete code and tests in the worktree. Prove every criterion and run the gates there. Never use the owner's database. See "Solution rules" below.
 6. **Rule pass.** Read the diff again against every rule file from step 3. Fix, then prove again. See "Rule pass" in `code-quality.md`.
 7. **Write the lesson files:**
