@@ -781,7 +781,7 @@ function loadMergedPrs(root, args) {
   if (file) return JSON.parse(readFileSync(file.slice('--merged-prs='.length), 'utf8'));
   if (args.includes('--no-gh')) return null;
   const result = spawnSync('gh', ['pr', 'list', '--state', 'merged', '--limit', '200', '--json', 'number,headRefName'], {
-    cwd: root, encoding: 'utf8', timeout: 20_000, shell: process.platform === 'win32',
+    cwd: root, encoding: 'utf8', timeout: 20_000,
   });
   if (result.status !== 0) {
     log('gh pr list failed; merged-lesson check skipped');
