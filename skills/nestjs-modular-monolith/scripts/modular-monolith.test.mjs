@@ -164,6 +164,26 @@ test('add-module ignores imports keys nested inside other metadata and comments'
   assert.match(app, /forRootAsync\(\{ imports: \[ConfigModule\] \}\)/);
 });
 
+test('add-module keeps comments inside the imports array out of the way', () => {
+  const add = (deco) => {
+    const dir = project({ ...ESM_APP, 'src/app.module.ts': `import { Module } from '@nestjs/common';\n\n${deco}\nexport class AppModule {}\n` });
+    assert.equal(json(node('add-module.mjs', dir, 'billing')).manual, null, deco);
+    return readFileSync(join(dir, 'src/app.module.ts'), 'utf8');
+  };
+  // Only a comment: no array hole like `[/* c */, BillingModule]`.
+  assert.match(add('@Module({ imports: [/* add modules here */] })'), /imports: \[BillingModule \/\* add modules here \*\/\]/);
+  // Last item has a line comment: the comma goes before the comment, not inside it.
+  const lineComment = add('@Module({\n  imports: [\n    ConfigModule // global config\n  ],\n})');
+  assert.match(lineComment, /imports: \[\n {4}ConfigModule, \/\/ global config\n {4}BillingModule,\n {2}\]/);
+  // Trailing comma and a comment after it.
+  const trailing = add('@Module({\n  imports: [\n    ConfigModule, // global config\n  ],\n})');
+  assert.match(trailing, /ConfigModule, \/\/ global config\n {4}BillingModule,\n {2}\]/);
+  // Comment-only multi-line array.
+  assert.match(add('@Module({\n  imports: [\n    // add modules here\n  ],\n})'), /imports: \[\n {4}BillingModule,\n {4}\/\/ add modules here\n {2}\]/);
+  // Same-line block comment after the last item.
+  assert.match(add('@Module({ imports: [ConfigModule /* global */] })'), /imports: \[ConfigModule, BillingModule \/\* global \*\/\]/);
+});
+
 // ---------- inspect ----------
 
 test('inspect reports toolchain and coverage; starter names alone are not a fresh project', () => {
@@ -231,6 +251,13 @@ test("inspect reports Yarn Plug'n'Play as a blocker", () => {
   assert.deepEqual(linker.blockers, []);
   const classic = json(node('inspect.mjs', project({ ...ESM_APP, 'package.json': '{}', 'yarn.lock': '' }), '--no-cruise'));
   assert.equal(classic.packageManager.yarnPnp, false);
+  // A clean checkout: no install yet, so no .pnp.cjs, and no .yarnrc.yml. Yarn 2+ still defaults to PnP.
+  const cleanCheckout = json(node('inspect.mjs', project({ ...yarn, 'yarn.lock': '' }), '--no-cruise'));
+  assert.equal(cleanCheckout.packageManager.yarnPnp, true);
+  const berryLock = json(node('inspect.mjs', project({ ...ESM_APP, 'package.json': '{}', 'yarn.lock': '__metadata:\n  version: 8\n' }), '--no-cruise'));
+  assert.equal(berryLock.packageManager.yarnPnp, true);
+  const yarn1 = { ...ESM_APP, 'package.json': JSON.stringify({ packageManager: 'yarn@1.22.22' }), 'yarn.lock': '' };
+  assert.equal(json(node('inspect.mjs', project(yarn1), '--no-cruise')).packageManager.yarnPnp, false);
 });
 
 test("self-test explains Yarn Plug'n'Play instead of a missing install", () => {
