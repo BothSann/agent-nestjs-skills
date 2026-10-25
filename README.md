@@ -37,7 +37,7 @@ The skills adapt to the project's stack and rules: npm, pnpm, Yarn, or Bun; root
 npx skills add BothSann/agent-nestjs-skills --skill nestjs-modular-monolith
 ```
 
-Works with any database, ORM, package manager, ESM or CommonJS. Import rules cannot prove good business boundaries or stop cross-module table access; the skill says so in its report.
+Works with any database or ORM; npm, pnpm, Yarn (node-modules linker, not Plug'n'Play), or Bun; ESM or CommonJS. Import rules cannot prove good business boundaries or stop cross-module table access; the skill says so in its report.
 
 ## Layout
 

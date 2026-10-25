@@ -35,14 +35,17 @@ function findDepcruise() {
   const given = flag('depcruise') ?? process.env.DEPCRUISE_BIN;
   if (given) return resolve(given);
   // The package's `exports` hides package.json from require.resolve, so walk up instead.
+  let pnp = false;
   for (let dir = root; ; dir = dirname(dir)) {
     const pkgPath = join(dir, 'node_modules', 'dependency-cruiser', 'package.json');
     if (existsSync(pkgPath)) {
       const bin = JSON.parse(readFileSync(pkgPath, 'utf8')).bin;
       return join(dirname(pkgPath), typeof bin === 'string' ? bin : bin.depcruise);
     }
+    pnp ||= existsSync(join(dir, '.pnp.cjs'));
     if (dirname(dir) === dir) break;
   }
+  if (pnp) fail("Yarn Plug'n'Play is not supported: set `nodeLinker: node-modules` in .yarnrc.yml and run `yarn install`");
   return fail('dependency-cruiser is not installed in the project (add it as a dev dependency)');
 }
 const depcruise = findDepcruise();
