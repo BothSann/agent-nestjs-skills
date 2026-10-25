@@ -36,6 +36,16 @@ test('a file is counted once per workflow and descriptions remain separate metri
   assert.equal(snapshot.skills[0].descriptionTokens, count('test a task'));
 });
 
+test('non-Markdown files count only when listed, and a line range counts only those lines', () => {
+  const dir = fixture('\n');
+  writeFileSync(join(dir, 'skills', skills[0], 'config.cjs'), ['one two', 'three four', 'five six'].join('\n'));
+  const whole = measure(dir, [{ id: 'whole', skill: skills[0], files: ['config.cjs'] }], count);
+  const part = measure(dir, [{ id: 'part', skill: skills[0], files: ['config.cjs#L1-1'] }], count);
+  assert.equal(whole.scenarios[0].tokens, count('one two\nthree four\nfive six'));
+  assert.equal(part.scenarios[0].tokens, count('one two'));
+  assert.equal(measure(dir, scenarios, count).files[`skills/${skills[0]}/config.cjs`], undefined);
+});
+
 test('comparison distinguishes shorter content from loading fewer references', () => {
   const before = { encoding: 'test', scenarios: [{ id: 'review', skill: 'test', files: ['entry', 'optional'], tokens: 100 }] };
   const after = { encoding: 'test', scenarios: [{ id: 'review', skill: 'test', files: ['entry'], tokens: 30 }], files: { entry: { tokens: 30 }, optional: { tokens: 20 } } };
