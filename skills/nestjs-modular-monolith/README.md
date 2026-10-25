@@ -7,10 +7,12 @@ Works with any business domain, database, and ORM; with npm, pnpm, Yarn (node-mo
 ## What it covers
 
 - New projects: config, scripts, a clean `AppModule`, and an "app compiles" test
-- Adding a module: folders, Nest module, `index.ts`, registered in `AppModule`
+- Adding a module: five layer folders (`domain/`, `application/`, `infrastructure/`, `api/`, `contracts/`), each with `.gitkeep`, plus `<name>.module.ts` and `index.ts`, registered in the root Nest module
 - Existing projects: an inspection report, a known-violations baseline so new violations fail, and a suggested migration order. This prepares a migration; it does not move code.
 - Switches: controllers may use domain types, allowed pure packages in `domain/`, custom paths
 - Optional, on request: `@nestjs/cqrs`, outbox events, API/worker split, fixed module direction
+
+The initial application layer contains `application/.gitkeep`. Create `application/commands/` or `application/queries/` when adding its first use case. Create each shared layer on first use; an empty scaffold needs no shared folders, files, or base classes.
 
 ## What it does not cover
 

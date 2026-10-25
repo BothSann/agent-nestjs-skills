@@ -11,22 +11,22 @@ metadata:
 
 Sets up structure and checks. Never designs business boundaries or moves existing code unasked.
 
-Read [structure.md](references/structure.md) before writing module code, [rules.md](references/rules.md) before choosing settings or reporting, [existing-project.md](references/existing-project.md) for existing apps, [options.md](references/options.md) only for a requested opt-in. For DDD code use the `nestjs-best-practices` `ddd-*` rules if installed.
+Read [structure.md](references/structure.md) for module code, [rules.md](references/rules.md) before settings/reporting, [existing-project.md](references/existing-project.md) for existing apps, [options.md](references/options.md) for requested opt-ins. For DDD code, follow installed `nestjs-best-practices` `ddd-*` rules.
 
 ## Steps
-1. `node <skill-dir>/scripts/inspect.mjs <root> --no-cruise` (read only). Stop and report any `blockers`. Use its `packageManager.commands`; never assume a manager. `nest.monorepo`: ask which app, set the paths to it.
-2. Mode: **new** only if you ran `nest new <name> --package-manager <pm> --strict` in this session or `layout.freshNestProject` is true (every starter file untouched). Anything else is **existing** (follow existing-project.md; call the result migration preparation).
+1. `node <skill-dir>/scripts/inspect.mjs <root> --no-cruise` (read only). Stop/report `blockers`. Use `packageManager.commands`. For `nest.monorepo`, ask which app and set its paths.
+2. **New** only after `nest new <name> --package-manager <pm> --strict` in this session or `layout.freshNestProject: true` (untouched starters). Otherwise **existing**: follow existing-project.md; report migration preparation.
 3. Install `dependency-cruiser` with `addDev`.
 4. Copy [assets/dependency-cruiser.cjs](assets/dependency-cruiser.cjs) to `<root>/.dependency-cruiser.cjs`. Read only its first 13 lines; edit only `settings`. Keep the hidden `settings` export.
 5. Copy [scripts/arch-selftest.mjs](scripts/arch-selftest.mjs) to `<root>/tools/arch-selftest.mjs`.
-6. `package.json` scripts: `arch` = `depcruise <sourceRoot> [test] --config .dependency-cruiser.cjs` (existing mode adds `--ignore-known .dependency-cruiser-known-violations.json`); `arch:selftest` = `node tools/arch-selftest.mjs .`. Add both to an existing check/CI script; create CI files only if asked.
-7. New mode: delete `AppController`, `AppService`, and their spec, only if `layout.starterFiles` marks them `untouched`; set `AppModule` to `imports: []`, keeping imports `nest new` added (such as `ObserveModule`); add `src/app.module.spec.ts` that compiles `AppModule`; make the e2e test check the app boots (`GET /` → 404). Match the project's import suffix.
-8. For each module the user names: `node <skill-dir>/scripts/add-module.mjs <root> <kebab-name>` (layers, module, `index.ts`, registered in the root module; follows suffix, quotes, alias). Never invent business modules; no example module.
+6. Scripts: `arch` = `depcruise <sourceRoot> [test] --config .dependency-cruiser.cjs` (existing: add `--ignore-known .dependency-cruiser-known-violations.json`); `arch:selftest` = `node tools/arch-selftest.mjs .`. Include both in existing check/CI scripts; create CI files only if asked.
+7. New mode: delete `AppController`, `AppService`, and their spec only when `layout.starterFiles` marks them `untouched`. Remove their `AppModule` wiring; preserve CLI-added imports (e.g. `ObserveModule`). Add `src/app.module.spec.ts` compiling `AppModule` and an e2e boot test (`GET /` → 404). Match import suffixes.
+8. User-named modules: `node <skill-dir>/scripts/add-module.mjs <root> <kebab-name>` creates `domain/`, `application/`, `infrastructure/`, `api/`, `contracts/` with `.gitkeep`, `<name>.module.ts`, and `index.ts`; registers in the root module, preserving import style. Add `application/commands/`, `application/queries/`, and shared layers on first use. Never invent business modules; no example module.
 9. Verify with the project's commands: build/typecheck, lint, unit, e2e, `arch`, `arch:selftest`, formatter if any. All must pass.
 
-Defaults: CQRS shape without a bus (plain use-case classes with `execute()`, injected directly); api/ calls application/ only; domain/ uses no packages; relative imports in new projects, existing working aliases kept; no base classes or shared files until code needs them. Change them only through `settings` or options.md.
+Defaults: directly injected use cases with `execute()` (no CQRS bus); api/ calls application/ only; domain/ uses no packages; new projects use relative imports, existing aliases stay; base classes/shared files only when needed. Configure through `settings` or options.md.
 
 ## Report
-Mode and changes; real numbers (`arch` violations and known ones, self-test cases, tests); the limits from rules.md, plainly: a passing `arch` is not a DDD review. Existing mode: files outside the architecture and a suggested first module.
+Report mode, changes, counts (`arch` violations/known ones, self-test cases, tests), and rules.md limits: passing `arch` is not a DDD review. Existing mode: outside files and suggested first module.
 
 Never weaken or delete a rule, add an ignore, or grow the baseline to pass checks. If a rule seems wrong, explain it and let the user choose the setting.
