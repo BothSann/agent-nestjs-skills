@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
+    "dependency-cruiser": "^18.7.0",
     "js-tiktoken": "1.0.21",
     "ts-node": "^10.9.0",
     "typescript": "^5.0.0"

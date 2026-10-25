@@ -14,7 +14,7 @@ CQRS means Command Query Responsibility Segregation: changing data and reading d
 - A **command** changes state. Its handler loads an aggregate through its repository, calls a method, and saves. It returns nothing or just an id.
 - A **query** reads state. Its handler skips the domain model and reads with plain SQL or a read model, returning a DTO shaped for the caller. It never changes data.
 
-Use `@nestjs/cqrs` for the command, query, and event buses. Controllers stay thin: they turn HTTP into a command or query and nothing more. Use CQRS inside bounded contexts with real business rules. For simple CRUD modules it adds files without adding value.
+Start with plain injectable handler classes in `application/commands/` and `application/queries/`, each with one `execute()` method, injected straight into the controller. That keeps "go to definition" working, and a missing provider fails at startup. Add `@nestjs/cqrs` buses later if you need them (see the end of this rule); the handlers already have the right shape. Controllers stay thin: they turn HTTP into a handler call and nothing more. Use CQRS inside bounded contexts with real business rules. For simple CRUD modules it adds files without adding value.
 
 **Incorrect (one service does both; reads load full aggregates):**
 
@@ -41,19 +41,12 @@ export class OrdersService {
 **Correct (command and handler):**
 
 ```typescript
-// application/commands/place-order/place-order.command.ts
-export class PlaceOrderCommand extends Command<void> {
-  constructor(readonly orderId: string) {
-    super();
-  }
-}
-
-// application/commands/place-order/place-order.handler.ts
-@CommandHandler(PlaceOrderCommand)
-export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
+// application/commands/place-order.handler.ts
+@Injectable()
+export class PlaceOrderHandler {
   constructor(@Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository) {}
 
-  async execute({ orderId }: PlaceOrderCommand): Promise<void> {
+  async execute(orderId: string): Promise<void> {
     const order = await this.orders.getById(orderId);
     order.place();                 // rules live in the aggregate
     await this.orders.save(order); // events go to the outbox in the same transaction
@@ -64,7 +57,7 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
 **Correct (query and handler read directly, no aggregate):**
 
 ```typescript
-// application/queries/list-customer-orders/list-customer-orders.query.ts
+// application/queries/list-customer-orders.handler.ts
 export interface OrderSummaryDto {
   id: string;
   status: string;
@@ -73,18 +66,11 @@ export interface OrderSummaryDto {
   placedAt: string | null;
 }
 
-export class ListCustomerOrdersQuery extends Query<OrderSummaryDto[]> {
-  constructor(readonly customerId: string, readonly limit = 20, readonly offset = 0) {
-    super();
-  }
-}
-
-// application/queries/list-customer-orders/list-customer-orders.handler.ts
-@QueryHandler(ListCustomerOrdersQuery)
-export class ListCustomerOrdersHandler implements IQueryHandler<ListCustomerOrdersQuery> {
+@Injectable()
+export class ListCustomerOrdersHandler {
   constructor(private readonly dataSource: DataSource) {}
 
-  async execute({ customerId, limit, offset }: ListCustomerOrdersQuery): Promise<OrderSummaryDto[]> {
+  async execute(customerId: string, limit = 20, offset = 0): Promise<OrderSummaryDto[]> {
     // One SQL query, only the columns the screen needs
     return this.dataSource.query(
       `SELECT o.id,
@@ -111,31 +97,24 @@ export class ListCustomerOrdersHandler implements IQueryHandler<ListCustomerOrde
 @Controller('orders')
 export class OrdersController {
   constructor(
-    private readonly commandBus: CommandBus,
-    private readonly queryBus: QueryBus,
+    private readonly placeOrder: PlaceOrderHandler,
+    private readonly listCustomerOrders: ListCustomerOrdersHandler,
   ) {}
 
   @Post(':id/place')
   @HttpCode(204)
   place(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
-    return this.commandBus.execute(new PlaceOrderCommand(id));
+    return this.placeOrder.execute(id);
   }
 
   @Get()
   list(@CurrentUser() user: AuthUser, @Query() q: PaginationDto): Promise<OrderSummaryDto[]> {
-    return this.queryBus.execute(new ListCustomerOrdersQuery(user.id, q.limit, q.offset));
+    return this.listCustomerOrders.execute(user.id, q.limit, q.offset);
   }
 }
 
-// app.module.ts
-@Module({
-  imports: [CqrsModule.forRoot(), OrderingModule /* , other bounded contexts */],
-})
-export class AppModule {}
-
 // ordering.module.ts
 @Module({
-  imports: [CqrsModule],
   controllers: [OrdersController],
   providers: [
     PlaceOrderHandler,
@@ -147,5 +126,38 @@ export class OrderingModule {}
 ```
 
 Start with one database and plain SQL reads like above. Only add a separate read database or projections when reads are truly too slow; that brings eventual consistency (reads can lag a moment behind writes).
+
+**Optional (`@nestjs/cqrs` buses, when you need them):**
+
+Add the buses when you have many handlers, want in-process event handlers or sagas, or the team already uses the library. The cost: the controller no longer points at its handler, and a missing handler fails only when the request arrives. Its `EventBus` keeps events in memory, so use an outbox (`ddd-transactional-outbox`) for events between modules.
+
+```typescript
+// application/commands/place-order.command.ts
+export class PlaceOrderCommand extends Command<void> {
+  constructor(readonly orderId: string) {
+    super();
+  }
+}
+
+// application/commands/place-order.handler.ts – same body, now registered on the bus
+@CommandHandler(PlaceOrderCommand)
+export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
+  constructor(@Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository) {}
+
+  async execute({ orderId }: PlaceOrderCommand): Promise<void> {
+    const order = await this.orders.getById(orderId);
+    order.place();
+    await this.orders.save(order);
+  }
+}
+
+// api/orders.controller.ts
+constructor(private readonly commandBus: CommandBus) {}
+place(@Param('id', ParseUUIDPipe) id: string): Promise<void> {
+  return this.commandBus.execute(new PlaceOrderCommand(id));
+}
+
+// app.module.ts: imports: [CqrsModule.forRoot(), OrderingModule]
+```
 
 Reference: [NestJS CQRS](https://docs.nestjs.com/recipes/cqrs) · [Martin Fowler – CQRS](https://martinfowler.com/bliki/CQRS.html)

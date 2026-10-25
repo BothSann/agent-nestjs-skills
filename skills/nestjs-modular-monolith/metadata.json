@@ -1,0 +1,11 @@
+{
+  "version": "1.0.0",
+  "organization": "NestJS Modular Monolith",
+  "date": "October 2026",
+  "abstract": "Sets up a NestJS app as a modular monolith with DDD layers (domain, application, infrastructure, api, contracts), a public index.ts per module, and dependency-cruiser boundary rules proven by a self-test in a temp project. Adds modules, inspects existing apps, and records a known-violations baseline as migration preparation. Independent of business domain, database, ORM, and package manager.",
+  "references": [
+    "https://docs.nestjs.com/modules",
+    "https://github.com/sverweij/dependency-cruiser",
+    "https://github.com/BothSann/agent-nestjs-skills"
+  ]
+}

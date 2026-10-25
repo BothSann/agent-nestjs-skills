@@ -11,10 +11,10 @@ tags: ddd, modular-monolith, boundaries, integration-events, facade
 
 A bounded context module must not reach into another module's internals: no importing its entities, repositories, ORM tables, or services. There are two allowed ways to talk across modules:
 
-1. **Synchronous call through a public contract** (a facade) when you need an answer right now. The facade returns plain DTOs, never domain objects or ORM entities.
+1. **Synchronous call through a public contract** when you need an answer right now. The contract is an interface plus an injection token in the module's `contracts/` folder. It returns plain DTOs, never domain objects or ORM entities.
 2. **Asynchronous integration events** when another module only needs to react. The receiver keeps its own copy of the data it needs.
 
-Each module's `index.ts` is its public surface. Enforce the boundary with a lint rule so mistakes fail in CI, not in code review.
+Each module's `index.ts` is its public surface: the Nest module and `contracts/`, nothing else. Enforce the boundary with a tool so mistakes fail in CI, not in code review.
 
 **Incorrect (reaching into another module's internals):**
 
@@ -23,15 +23,15 @@ Each module's `index.ts` is its public surface. Enforce the boundary with a lint
 import { UserOrmEntity } from '../../../identity/infrastructure/user.orm-entity'; // internal file
 import { UsersService } from '../../../identity/users.service';                  // internal service
 
-@CommandHandler(PlaceOrderCommand)
-export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
+@Injectable()
+export class PlaceOrderHandler {
   constructor(
     @InjectRepository(UserOrmEntity) private users: Repository<UserOrmEntity>, // reads identity's table
     private usersService: UsersService,
   ) {}
 
-  async execute(cmd: PlaceOrderCommand) {
-    const user = await this.users.findOneByOrFail({ id: cmd.userId });
+  async execute(input: PlaceOrderInput) {
+    const user = await this.users.findOneByOrFail({ id: input.userId });
     user.lastOrderAt = new Date();       // writes into another module's data
     await this.users.save(user);
     // ...
@@ -40,10 +40,10 @@ export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
 // If identity renames a column or moves to its own service, ordering breaks.
 ```
 
-**Correct (option 1 – public facade for questions that need an answer now):**
+**Correct (option 1 – public contract for questions that need an answer now):**
 
 ```typescript
-// modules/catalog/api/catalog.facade.ts
+// modules/catalog/contracts/product-prices.ts – plain types and a token
 export interface ProductPriceDto {
   productId: string;
   amount: number;
@@ -51,39 +51,58 @@ export interface ProductPriceDto {
   available: boolean;
 }
 
-@Injectable()
-export class CatalogFacade {
-  constructor(private readonly queryBus: QueryBus) {}
+export interface ProductPrices {
+  getPrice(productId: string): Promise<ProductPriceDto>;
+}
 
-  getPrice(productId: string): Promise<ProductPriceDto> {
-    return this.queryBus.execute(new GetProductPriceQuery(productId));
+export const PRODUCT_PRICES = Symbol('PRODUCT_PRICES');
+
+// modules/catalog/application/product-prices.service.ts – the implementation stays inside
+@Injectable()
+export class ProductPricesService implements ProductPrices {
+  constructor(@Inject(PRODUCT_REPOSITORY) private readonly products: ProductRepository) {}
+
+  async getPrice(productId: string): Promise<ProductPriceDto> {
+    const product = await this.products.getById(productId);
+    return { productId, amount: product.price.amount, currency: product.price.currency, available: product.isAvailable };
   }
 }
+
+// modules/catalog/catalog.module.ts
+@Module({
+  providers: [
+    ProductPricesService,
+    { provide: PRODUCT_PRICES, useExisting: ProductPricesService },
+    { provide: PRODUCT_REPOSITORY, useClass: TypeOrmProductRepository },
+  ],
+  exports: [PRODUCT_PRICES], // only the contract token leaves the module
+})
+export class CatalogModule {}
 
 // modules/catalog/index.ts
 export { CatalogModule } from './catalog.module';
-export { CatalogFacade } from './api/catalog.facade';
-export type { ProductPriceDto } from './api/catalog.facade';
+export * from './contracts/product-prices';
 
 // modules/ordering/application/commands/add-item.handler.ts
-import { CatalogFacade } from '@modules/catalog'; // public entry only
+import { PRODUCT_PRICES, type ProductPrices } from '../../../catalog'; // its index.ts only
 
-@CommandHandler(AddItemCommand)
-export class AddItemHandler implements ICommandHandler<AddItemCommand> {
+@Injectable()
+export class AddItemHandler {
   constructor(
     @Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository,
-    private readonly catalog: CatalogFacade,
+    @Inject(PRODUCT_PRICES) private readonly prices: ProductPrices,
   ) {}
 
-  async execute(cmd: AddItemCommand): Promise<void> {
-    const price = await this.catalog.getPrice(cmd.productId);
-    if (!price.available) throw new ProductUnavailableError(cmd.productId);
+  async execute(input: AddItemInput): Promise<void> {
+    const price = await this.prices.getPrice(input.productId);
+    if (!price.available) throw new ProductUnavailableError(input.productId);
 
-    const order = await this.orders.getById(cmd.orderId);
-    order.addItem(cmd.productId, cmd.qty, Money.of(price.amount, price.currency));
+    const order = await this.orders.getById(input.orderId);
+    order.addItem(input.productId, input.qty, Money.of(price.amount, price.currency));
     await this.orders.save(order);
   }
 }
+// OrderingModule imports CatalogModule (from '../catalog') so the token can be injected.
 ```
 
 **Correct (option 2 – integration events for things that only need to react):**
@@ -114,28 +133,34 @@ export class UserRegisteredHandler {
 // Deliver integration events through the outbox (see ddd-transactional-outbox).
 ```
 
-**Enforce the boundary with ESLint:**
+**Enforce the boundary with dependency-cruiser:**
 
 ```javascript
-// eslint.config.mjs
-export default [
-  {
-    files: ['src/modules/**/*.ts'],
-    rules: {
-      'no-restricted-imports': ['error', {
-        patterns: [{
-          // Block deep imports into any module; allow '@modules/<name>' (its index.ts) only
-          group: ['@modules/*/*', '**/modules/*/domain/**', '**/modules/*/infrastructure/**', '**/modules/*/application/**'],
-          message: 'Import other modules only through their public entry: @modules/<name>',
-        }],
-      }],
+// .dependency-cruiser.cjs
+module.exports = {
+  forbidden: [
+    {
+      name: 'cross-module-via-index',
+      comment: 'A module reaches another module only through its index.ts.',
+      severity: 'error',
+      from: { path: '^src/modules/([^/]+)/' },
+      to: { path: '^src/modules/', pathNot: ['^src/modules/$1/', '^src/modules/[^/]+/index\\.ts$'] },
     },
-  },
-];
-// Inside a module, use relative imports (./, ../) for its own files.
-// Limit: this pattern cannot see relative paths that climb into a sibling module
-// (e.g. '../../../identity/...'). For full checks, use eslint-plugin-boundaries
-// or dependency-cruiser, which understand folder-to-folder rules.
+    {
+      name: 'index-exposes-public-surface',
+      comment: 'index.ts re-exports only the Nest module and contracts/.',
+      severity: 'error',
+      from: { path: '^(src/modules/[^/]+)/index\\.ts$' },
+      to: { path: '^$1/', pathNot: ['^$1/contracts/', '^$1/[^/]+\\.module\\.ts$'] },
+    },
+  ],
+  options: { tsPreCompilationDeps: true, tsConfig: { fileName: 'tsconfig.json' } },
+};
+// Run: npx depcruise src --config .dependency-cruiser.cjs
+// It checks resolved paths, so relative imports ('../../../identity/...') and
+// tsconfig aliases are both caught. ESLint's no-restricted-imports only sees the
+// written string and misses relative paths into a sibling module.
+// The nestjs-modular-monolith skill adds the layer rules and a self-test for the config.
 ```
 
-Reference: [Modular Monolith with DDD (kgrzybek)](https://github.com/kgrzybek/modular-monolith-with-ddd) · [ESLint no-restricted-imports](https://eslint.org/docs/latest/rules/no-restricted-imports)
+Reference: [Modular Monolith with DDD (kgrzybek)](https://github.com/kgrzybek/modular-monolith-with-ddd) · [dependency-cruiser rules](https://github.com/sverweij/dependency-cruiser/blob/main/doc/rules-reference.md)

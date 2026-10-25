@@ -4,7 +4,7 @@ description: Write, review, or refactor NestJS code using prioritized architectu
 license: MIT
 metadata:
   author: Kadajett
-  version: "1.4.2"
+  version: "1.5.0"
 ---
 
 # NestJS rules
