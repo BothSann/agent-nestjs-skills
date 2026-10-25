@@ -7,7 +7,7 @@
       "skill": "nestjs-best-practices",
       "entryTokens": 534,
       "descriptionTokens": 35,
-      "corpusTokens": 55113
+      "corpusTokens": 55763
     },
     {
       "skill": "nestjs-learn-pick-task",
@@ -26,6 +26,12 @@
       "entryTokens": 534,
       "descriptionTokens": 39,
       "corpusTokens": 10113
+    },
+    {
+      "skill": "nestjs-modular-monolith",
+      "entryTokens": 807,
+      "descriptionTokens": 47,
+      "corpusTokens": 4456
     }
   ],
   "scenarios": [
@@ -95,6 +101,53 @@
         "skills/nestjs-learn-coach/references/project-config.md"
       ],
       "tokens": 5019
+    },
+    {
+      "id": "mm-new-project",
+      "skill": "nestjs-modular-monolith",
+      "files": [
+        "skills/nestjs-modular-monolith/SKILL.md",
+        "skills/nestjs-modular-monolith/references/rules.md",
+        "skills/nestjs-modular-monolith/assets/dependency-cruiser.cjs#L1-13"
+      ],
+      "tokens": 1884
+    },
+    {
+      "id": "mm-add-module",
+      "skill": "nestjs-modular-monolith",
+      "files": [
+        "skills/nestjs-modular-monolith/SKILL.md"
+      ],
+      "tokens": 807
+    },
+    {
+      "id": "mm-module-code",
+      "skill": "nestjs-modular-monolith",
+      "files": [
+        "skills/nestjs-modular-monolith/SKILL.md",
+        "skills/nestjs-modular-monolith/references/structure.md"
+      ],
+      "tokens": 1959
+    },
+    {
+      "id": "mm-existing-project",
+      "skill": "nestjs-modular-monolith",
+      "files": [
+        "skills/nestjs-modular-monolith/SKILL.md",
+        "skills/nestjs-modular-monolith/references/existing-project.md",
+        "skills/nestjs-modular-monolith/references/rules.md",
+        "skills/nestjs-modular-monolith/assets/dependency-cruiser.cjs#L1-13"
+      ],
+      "tokens": 2437
+    },
+    {
+      "id": "mm-option",
+      "skill": "nestjs-modular-monolith",
+      "files": [
+        "skills/nestjs-modular-monolith/SKILL.md",
+        "skills/nestjs-modular-monolith/references/options.md"
+      ],
+      "tokens": 1270
     }
   ],
   "files": {
@@ -123,8 +176,8 @@
       "sha256": "ad302561d7f311ead6618c0aede483ba94069a9ab5d87937380dbb493cd3e934"
     },
     "skills/nestjs-best-practices/rules/arch-avoid-circular-deps.md": {
-      "tokens": 628,
-      "sha256": "090d9b237adbe9f727a7d281f119b47905d94a76d033bde95d7e5b0c53e7ec9d"
+      "tokens": 648,
+      "sha256": "0a9fbe19b58c1a2ed7a31fa1a6856716c13b1cf88d3b3d6c8d9e65acd32c460b"
     },
     "skills/nestjs-best-practices/rules/arch-feature-modules.md": {
       "tokens": 559,
@@ -163,28 +216,28 @@
       "sha256": "c77de2b40c8ba7eea77aba8bec91ec8bcf382c3faeaa66d0368cb6914202bdac"
     },
     "skills/nestjs-best-practices/rules/ddd-aggregate-repository.md": {
-      "tokens": 1133,
-      "sha256": "3fc2e454518f2c2d7965c01ebd519f532e032ddbfd95dcd52d14c82fc030d4d1"
+      "tokens": 1116,
+      "sha256": "626871bcf55890e57b319d08d902444d78c40ea691bfb4627a4ac7765328748c"
     },
     "skills/nestjs-best-practices/rules/ddd-bounded-context-modules.md": {
-      "tokens": 1164,
-      "sha256": "a7c0e37ed3ef48247f616426f4a673d7474d7b9249e28495e8bf28bc7e26e72c"
+      "tokens": 1347,
+      "sha256": "e7144e8f1b946d977367a45798b246c5b48472b823dfb6468800537a0be8adec"
     },
     "skills/nestjs-best-practices/rules/ddd-cqrs.md": {
-      "tokens": 1229,
-      "sha256": "76743e9d6388d870c775e13bc514a40f9f3790a4e291538adbf007d29a87b85e"
+      "tokens": 1414,
+      "sha256": "9956aa0b425c42c7cb7ef189162de61519421ac3eb0e5db8edcfee9b3b1b0b0d"
     },
     "skills/nestjs-best-practices/rules/ddd-module-public-api.md": {
-      "tokens": 1209,
-      "sha256": "75fda864c2f7c2619bb027560603460c2e392d33e39c89c400f4f0ecd44f47a0"
+      "tokens": 1506,
+      "sha256": "086dce12e217d4e491ad2474e59b93bfdd9dec49d95e2efa314778d564c75034"
     },
     "skills/nestjs-best-practices/rules/ddd-rich-domain-model.md": {
-      "tokens": 1597,
-      "sha256": "d5a7038a8f7d5029af9c52933fb88a4938730bd4a7fa6406c00e3c061eee815e"
+      "tokens": 1595,
+      "sha256": "98b150c15f4eacf56c4c13d334220940083f588ee25c2639d6aa9483af286f93"
     },
     "skills/nestjs-best-practices/rules/ddd-transactional-outbox.md": {
-      "tokens": 1690,
-      "sha256": "f15f3a205bfbae34add2e8169efd78c7f6fb7815d2c4e8e97dc34923c686850e"
+      "tokens": 1674,
+      "sha256": "31882377405eb9c6f5af9418e4503e793c777325f43b80fea089d178ed530469"
     },
     "skills/nestjs-best-practices/rules/devops-docker-and-dependencies.md": {
       "tokens": 779,
@@ -324,7 +377,7 @@
     },
     "skills/nestjs-best-practices/SKILL.md": {
       "tokens": 534,
-      "sha256": "491ef3741dd6ee5e85a7eff3d062a65895abd99131f8a52e9f443646f0f36cdf"
+      "sha256": "10e7fa0a552d11b54bc282783333bfca3fd834be6b58ed401707714f0e716fef"
     },
     "skills/nestjs-learn-pick-task/README.md": {
       "tokens": 367,
@@ -376,7 +429,7 @@
     },
     "skills/nestjs-learn-pick-task/SKILL.md": {
       "tokens": 726,
-      "sha256": "2f6bef3c5b6d1875a47652e04dc7888ddb42edc2ca42b066749358811904b300"
+      "sha256": "169426e2cb74eb54a09663225b223160e49252e7085b238c938287476a423a98"
     },
     "skills/nestjs-learn-write-lesson/README.md": {
       "tokens": 405,
@@ -481,6 +534,38 @@
     "skills/nestjs-learn-coach/SKILL.md": {
       "tokens": 534,
       "sha256": "b15e431bdc9b2d88097653e3b7178bd35a7f99f97315a7843a57f81d6bbb5a36"
+    },
+    "skills/nestjs-modular-monolith/README.md": {
+      "tokens": 591,
+      "sha256": "f97b55e58425dfbc63a1d621d2967606d098ea796a79a0b7ba13a65cd4262f5b"
+    },
+    "skills/nestjs-modular-monolith/references/existing-project.md": {
+      "tokens": 553,
+      "sha256": "f514764915c8eff35f1ccc4255d16f4e6b266e090abf455919195c2beabea504"
+    },
+    "skills/nestjs-modular-monolith/references/options.md": {
+      "tokens": 463,
+      "sha256": "9cd1f6f463f9cf1f631dc4c0bcc2d0c94ea064cbf0d49a762cf05da6724aa097"
+    },
+    "skills/nestjs-modular-monolith/references/rules.md": {
+      "tokens": 890,
+      "sha256": "59d2a7373580aa1a6e07abc2223380d13421ed23233ad7ab5501f845ae7e5e00"
+    },
+    "skills/nestjs-modular-monolith/references/structure.md": {
+      "tokens": 1152,
+      "sha256": "f693f39dd754ef243102e3616308016eb86b93cd3c84b3b03bc82769d3f058da"
+    },
+    "skills/nestjs-modular-monolith/SKILL.md": {
+      "tokens": 807,
+      "sha256": "4ceb17d47b5e023bc2e27c8370f471bdccf0a59421555842866104cc20d46707"
+    },
+    "skills/nestjs-modular-monolith/assets/dependency-cruiser.cjs": {
+      "tokens": 1702,
+      "sha256": "0147250b6539f77f61cfc95c55a199d1ed1e6547376b0074d94eb585d94a0a12"
+    },
+    "skills/nestjs-modular-monolith/assets/dependency-cruiser.cjs#L1-13": {
+      "tokens": 187,
+      "sha256": "f2649c8bc31d474809757d35ec4156666729109e6570a9fc16cf3a5f965e9117"
     }
   },
   "label": "working-tree",

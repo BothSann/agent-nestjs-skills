@@ -60,5 +60,47 @@
       "references/check.md",
       "references/project-config.md"
     ]
+  },
+  {
+    "id": "mm-new-project",
+    "skill": "nestjs-modular-monolith",
+    "files": [
+      "SKILL.md",
+      "references/rules.md",
+      "assets/dependency-cruiser.cjs#L1-13"
+    ]
+  },
+  {
+    "id": "mm-add-module",
+    "skill": "nestjs-modular-monolith",
+    "files": [
+      "SKILL.md"
+    ]
+  },
+  {
+    "id": "mm-module-code",
+    "skill": "nestjs-modular-monolith",
+    "files": [
+      "SKILL.md",
+      "references/structure.md"
+    ]
+  },
+  {
+    "id": "mm-existing-project",
+    "skill": "nestjs-modular-monolith",
+    "files": [
+      "SKILL.md",
+      "references/existing-project.md",
+      "references/rules.md",
+      "assets/dependency-cruiser.cjs#L1-13"
+    ]
+  },
+  {
+    "id": "mm-option",
+    "skill": "nestjs-modular-monolith",
+    "files": [
+      "SKILL.md",
+      "references/options.md"
+    ]
   }
 ]

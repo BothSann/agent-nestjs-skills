@@ -37,12 +37,38 @@ Baseline: commit `c266a3797691e255056666f71f4236548d5af1fa`. Optimized results: 
 - Routine coaching avoids full-review instructions. Unchanged references may be reused within a session; this avoids repeated reads, but is not a claim about how an application bills conversation history.
 - All 54 detailed best-practice rule files and the technical worktree/database procedure remain intact. Three installed learning skills remain self-contained with synchronized shared copies.
 
+## nestjs-modular-monolith
+
+Baseline: the first working version of the skill (`modular-monolith-before.json`), compared with the trimmed version (`modular-monolith-after.json`). Same tokenizer and rules as above.
+
+| Metric | Before | After | Reduction |
+|---|---:|---:|---:|
+| Description (loaded in every session) | 84 | 47 | 44.0% |
+| Entrypoint `SKILL.md` | 1,261 | 807 | 36.0% |
+
+| Scenario | Files | Before | After, same files | After, routed | Reduction |
+|---|---|---:|---:|---:|---:|
+| mm-new-project | SKILL, rules, config template | 4,239 | 3,399 | 1,884 | 55.6% |
+| mm-add-module | SKILL | 1,261 | 807 | 807 | 36.0% |
+| mm-module-code | SKILL, structure | 2,935 | 1,959 | 1,959 | 33.3% |
+| mm-existing-project | SKILL, existing-project, rules, config template | 4,962 | 3,952 | 2,437 | 50.9% |
+| mm-option | SKILL, options | 1,888 | 1,270 | 1,270 | 32.7% |
+
+What changed:
+
+- Text compression: duplicated defaults table removed from `SKILL.md` (settings live in `rules.md`); prose around the verified code examples shortened; self-test internals reduced to what the agent acts on.
+- Routing: the agent reads only the template's 13-line `settings` block (187 tokens) instead of the whole config (1,702). Scenarios count this as `assets/dependency-cruiser.cjs#L1-13`; the whole file is still recorded for the same-files column.
+- Not cut: every rule name, every setting, the safety statements (never weaken rules, migration preparation, baseline is not a clean bill of health and may only shrink), and the limits of import rules. Tests in `modular-monolith.test.mjs` fail if any of these go missing, or if a doc links to a missing file.
+
+Accuracy after trimming: the skill's 16 tests pass, and the full workflow was re-run on a `nest new` NestJS 12 app (build, lint, unit, e2e, `arch` with 0 violations, self-test 46/46). Scripts and the config's rule bodies were not changed by the trim.
+
 ## Reproduce
 
 From the repository root, after installing the development dependencies in `scripts/`:
 
 ```text
 node scripts/benchmark-tokens.mjs --compare benchmarks/tokens/before.json --output benchmarks/tokens/after.json
+node scripts/benchmark-tokens.mjs --compare benchmarks/tokens/modular-monolith-before.json --output benchmarks/tokens/modular-monolith-after.json
 node --test scripts/benchmark-tokens.test.mjs
 ```
 

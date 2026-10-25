@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 // Deterministic instruction-file benchmark; never invokes an agent or external API.
 import { createHash } from 'node:crypto';
-import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { getEncoding } from 'js-tiktoken';
 
 const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const encoding = 'o200k_base';
-const skills = ['nestjs-best-practices', 'nestjs-learn-pick-task', 'nestjs-learn-write-lesson', 'nestjs-learn-coach'];
+const skills = ['nestjs-best-practices', 'nestjs-learn-pick-task', 'nestjs-learn-write-lesson', 'nestjs-learn-coach', 'nestjs-modular-monolith'];
 
 export function measure(root, scenarios, count) {
   const files = {};
@@ -23,7 +23,8 @@ export function measure(root, scenarios, count) {
       }
     }
   }
-  const skillRows = skills.map((name) => {
+  // Skills missing from `root` (an older checkout, a test fixture) are skipped.
+  const skillRows = skills.filter((name) => existsSync(join(root, 'skills', name, 'SKILL.md'))).map((name) => {
     const dir = join(root, 'skills', name);
     walk(dir);
     const entry = `skills/${name}/SKILL.md`;
@@ -33,7 +34,22 @@ export function measure(root, scenarios, count) {
   });
   const scenarioRows = scenarios.map(({ id, skill, files: paths }) => {
     const selected = [...new Set(paths.map((file) => `skills/${skill}/${file}`))];
-    for (const file of selected) if (!files[file]) throw new Error(`Scenario ${id}: missing ${file}`);
+    for (const file of selected) {
+      // Non-Markdown files (config templates the agent reads to edit) count only when a scenario lists them.
+      // `path#L1-20` counts only those lines, for instructions that say to read just that part.
+      // The whole file is recorded too, so a baseline that read all of it can still be compared.
+      const [path, range] = file.split('#L');
+      if (!files[file] && !path.endsWith('.md') && existsSync(join(root, path))) {
+        const text = readFileSync(join(root, path), 'utf8').replace(/\r\n/g, '\n');
+        const row = (t) => ({ tokens: count(t), sha256: createHash('sha256').update(t).digest('hex') });
+        files[path] ??= row(text);
+        if (range) {
+          const [from, to] = range.split('-').map(Number);
+          files[file] = row(text.split('\n').slice(from - 1, to).join('\n'));
+        }
+      }
+      if (!files[file]) throw new Error(`Scenario ${id}: missing ${file}`);
+    }
     return { id, skill, files: selected, tokens: selected.reduce((sum, file) => sum + files[file].tokens, 0) };
   });
   return { schema: 1, encoding, normalization: 'CRLF to LF; sum each distinct file once per scenario', skills: skillRows, scenarios: scenarioRows, files };
