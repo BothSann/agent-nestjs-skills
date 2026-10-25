@@ -164,15 +164,36 @@ function registerIn(text, cls, importLine) {
   const close = closing(text, open, '[', ']');
   if (close < 0 || close > objClose) return null;
   const inner = text.slice(open + 1, close);
-  if (!inner.trim()) return `${text.slice(0, open + 1)}${cls}${text.slice(close)}`;
-  if (inner.includes('\n')) {
-    const itemIndent = (inner.match(/\n([ \t]+)\S/) ?? [, '    '])[1];
-    const body = inner.replace(/\s*$/, '');
-    const comma = body.endsWith(',') ? '' : ',';
-    const tail = inner.slice(body.length);
-    return `${text.slice(0, open + 1)}${body}${comma}\n${itemIndent}${cls},${tail}${text.slice(close)}`;
+  const multiLine = inner.includes('\n');
+
+  // Insert after the last real code in the array, never inside or before a comment.
+  let lastCode = -1;
+  for (let i = open + 1; i < close; i++) {
+    const next = skipToken(text, i);
+    if (next !== i) {
+      if ("'\"`".includes(text[i])) lastCode = next - 1; // strings are code, comments are not
+      i = next - 1;
+    } else if (!/\s/.test(text[i])) lastCode = i;
   }
-  return `${text.slice(0, open + 1)}${inner.replace(/,?\s*$/, '')}, ${cls}${text.slice(close)}`;
+
+  if (lastCode < 0) {
+    // Empty, or only comments: the module becomes the first entry.
+    if (!multiLine) return `${text.slice(0, open + 1)}${cls}${inner.trim() ? ` ${inner.trimStart()}` : ''}${text.slice(close)}`;
+    const indent = (inner.match(/\n([ \t]+)\S/) ?? [, '    '])[1];
+    return `${text.slice(0, open + 1)}\n${indent}${cls},${text.slice(open + 1)}`;
+  }
+
+  const comma = text[lastCode] === ',' ? '' : ',';
+  const lineEnd = text.indexOf('\n', lastCode);
+  const restOfLine = lineEnd < 0 ? '' : text.slice(lastCode + 1, lineEnd);
+  const openBlockComment = restOfLine.lastIndexOf('/*') > restOfLine.lastIndexOf('*/');
+  if (!multiLine || lineEnd < 0 || lineEnd > close || openBlockComment) {
+    return `${text.slice(0, lastCode + 1)}${comma} ${cls}${text.slice(lastCode + 1)}`;
+  }
+  // New line after the last item's line, so a trailing `// comment` stays on its item.
+  const lineStart = text.lastIndexOf('\n', lastCode) + 1;
+  const indent = text.slice(lineStart).match(/^[ \t]*/)[0];
+  return `${text.slice(0, lastCode + 1)}${comma}${restOfLine}\n${indent}${cls},${text.slice(lineEnd)}`;
 }
 
 // Index of the next character that is not whitespace or a comment.

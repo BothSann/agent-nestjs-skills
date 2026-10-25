@@ -169,15 +169,30 @@ function packageManager() {
   }
   const name = declared ?? found?.name ?? null;
   // Yarn Plug'n'Play has no node_modules, and the scripts find dependency-cruiser there.
-  // Yarn 2+ uses PnP unless .yarnrc.yml sets another nodeLinker.
+  // Yarn 2+ uses PnP unless .yarnrc.yml sets another nodeLinker, so a clean checkout
+  // (no .pnp.cjs, no .yarnrc.yml) of a Yarn 2+ project still installs with PnP.
   let yarnPnp = false;
   if (name === 'yarn') {
+    const declaredMajor = Number(/^yarn@(\d+)/.exec(pkg.packageManager ?? '')?.[1] ?? 0);
+    let modern = declaredMajor >= 2;
+    let linker = null;
     for (let dir = root; ; dir = dirname(dir)) {
-      const rc = join(dir, '.yarnrc.yml');
-      if (existsSync(join(dir, '.pnp.cjs'))) yarnPnp = true;
-      else if (existsSync(rc)) yarnPnp = !/^\s*nodeLinker:\s*["']?(node-modules|pnpm)/m.test(readFileSync(rc, 'utf8'));
-      if (yarnPnp || existsSync(rc) || existsSync(join(dir, '.git')) || dirname(dir) === dir) break;
+      if (existsSync(join(dir, '.pnp.cjs')) || existsSync(join(dir, '.pnp.js'))) {
+        yarnPnp = true;
+        break;
+      }
+      const rc = join(dir, '.yarnrc.yml'); // Yarn 2+ only; Yarn 1 reads .yarnrc
+      if (existsSync(rc)) {
+        modern = true;
+        linker = /^\s*nodeLinker:\s*["']?([\w-]+)/m.exec(readFileSync(rc, 'utf8'))?.[1] ?? null;
+        break;
+      }
+      const lock = join(dir, 'yarn.lock');
+      if (existsSync(lock) && /^__metadata:/m.test(readFileSync(lock, 'utf8'))) modern = true; // Yarn 2+ lockfile
+      if (existsSync(join(dir, '.git')) || dirname(dir) === dir) break;
     }
+    if (declaredMajor === 1) modern = false;
+    yarnPnp ||= modern && (linker === null || linker === 'pnp');
   }
   const commands = {
     npm: { install: 'npm install', addDev: 'npm install -D', run: 'npm run', exec: 'npx' },
