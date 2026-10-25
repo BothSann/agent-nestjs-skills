@@ -216,6 +216,10 @@ This is an index. Each line below is one rule: what to do, why it matters, and t
 
 Each learn skill folder is self-contained. Six files are copied into each one's \`references/\`: \`hard-rules.md\`, \`layout.md\`, \`project-config.md\`, \`code-quality.md\`, \`review-rules.md\`, \`voice.md\`. Change all three copies together.
 
+## Modular monolith skill (separate)
+
+\`skills/nestjs-modular-monolith\` sets up the layout from section 11 (layers, \`contracts/\`, public \`index.ts\`) and enforces it with dependency-cruiser, proven by a self-test. Keep its \`references/structure.md\` and the \`ddd-*\` rules teaching the same structure. Tests: \`node --test skills/nestjs-modular-monolith/scripts/modular-monolith.test.mjs\` (needs \`npm install\` in \`scripts/\`).
+
 ## Contributing
 
 Edit or add files in \`${RULES_PATH}/\` (see \`_template.md\` and \`_sections.md\`), then run \`npm run build\` in \`scripts/\` to regenerate this file.

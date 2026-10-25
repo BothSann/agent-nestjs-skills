@@ -29,6 +29,16 @@ They use `nestjs-best-practices` for code quality when it is installed. Each lea
 
 The skills adapt to the project's stack and rules: npm, pnpm, Yarn, or Bun; root apps or custom monorepo paths; CRUD or DDD; and the existing runner and database engine. Planning filenames and task IDs are configurable or optional. The bundled database helper supports PostgreSQL only; other engines use their native isolation tools. Scanner results are hints, with manual review for patterns it cannot parse.
 
+## Modular monolith skill (separate)
+
+`nestjs-modular-monolith` sets up a new or existing NestJS app as a modular monolith: business modules with `domain/`, `application/`, `infrastructure/`, `api/`, and `contracts/` layers, a public `index.ts` per module, and dependency-cruiser rules that fail the build when an import crosses a boundary. A self-test in a temp project proves each rule blocks what it should and allows what it should. For existing apps it records today's violations as a baseline and suggests a migration order; it does not move code.
+
+```bash
+npx skills add BothSann/agent-nestjs-skills --skill nestjs-modular-monolith
+```
+
+Works with any database, ORM, package manager, ESM or CommonJS. Import rules cannot prove good business boundaries or stop cross-module table access; the skill says so in its report.
+
 ## Layout
 
 Instruction-token measurements and reproduction commands: [token benchmark](benchmarks/tokens/README.md). Counts measure explicitly selected instruction files, not full agent usage.

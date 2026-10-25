@@ -71,33 +71,24 @@ export class Money {
 **Correct (aggregate root guards its rules):**
 
 ```typescript
-// shared/domain/aggregate-root.ts – tiny base class, no framework import
-export abstract class AggregateRoot {
-  private domainEvents: object[] = [];
-
-  protected apply(event: object): void {
-    this.domainEvents.push(event);
-  }
-
-  // The repository calls this when saving, to write events to the outbox
-  pullEvents(): object[] {
-    const events = this.domainEvents;
-    this.domainEvents = [];
-    return events;
-  }
-}
-
-// domain/order.ts
+// domain/order.ts – no base class needed
 export type OrderStatus = 'draft' | 'placed' | 'cancelled';
 
-export class Order extends AggregateRoot {
+export class Order {
+  private events: OrderPlacedEvent[] = [];
+
   private constructor(
     readonly id: string,
     readonly customerId: string, // other aggregate: id only
     private status: OrderStatus,
     private readonly lines: OrderLine[],
-  ) {
-    super();
+  ) {}
+
+  // The repository calls this when saving, to write events to the outbox
+  pullEvents(): OrderPlacedEvent[] {
+    const events = this.events;
+    this.events = [];
+    return events;
   }
 
   static create(id: string, customerId: string): Order {
@@ -121,7 +112,7 @@ export class Order extends AggregateRoot {
     if (this.status !== 'draft') throw new OrderLockedError(this.id);
     if (this.lines.length === 0) throw new EmptyOrderError(this.id);
     this.status = 'placed';
-    this.apply(new OrderPlacedEvent(this.id, this.customerId, this.total.cents, this.total.currency));
+    this.events.push(new OrderPlacedEvent(this.id, this.customerId, this.total.cents, this.total.currency));
   }
 
   get total(): Money {
@@ -137,6 +128,8 @@ export class Order extends AggregateRoot {
   }
 }
 ```
+
+When several aggregates repeat the same event code, move it into a small plain-TypeScript base class in `shared/domain/`. Do not start with one, and do not use the `@nestjs/cqrs` `AggregateRoot` in the domain: it ties the domain to a framework.
 
 **Correct (persistence model and mapper live in infrastructure):**
 
@@ -184,4 +177,4 @@ it('rejects items after the order is placed', () => {
 });
 ```
 
-Reference: [Martin Fowler – Anemic Domain Model](https://martinfowler.com/bliki/AnemicDomainModel.html) · [Martin Fowler – DDD Aggregate](https://martinfowler.com/bliki/DDD_Aggregate.html) · [NestJS CQRS](https://docs.nestjs.com/recipes/cqrs)
+Reference: [Martin Fowler – Anemic Domain Model](https://martinfowler.com/bliki/AnemicDomainModel.html) · [Martin Fowler – DDD Aggregate](https://martinfowler.com/bliki/DDD_Aggregate.html)

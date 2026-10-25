@@ -11,12 +11,13 @@ tags: ddd, modular-monolith, bounded-context, architecture, layers
 
 In a modular monolith, each top-level NestJS module maps to one bounded context: a part of the business with its own language and rules (for example `ordering`, `payments`, `catalog`). Inside the module, split code into layers so business rules do not depend on frameworks or the database:
 
-- `domain/` – aggregates, value objects, domain events, repository interfaces. Plain TypeScript. No NestJS, no ORM imports.
-- `application/` – use cases (commands, queries, handlers). Orchestrates the domain. Depends only on `domain/`.
-- `infrastructure/` – ORM entities, repository implementations, outbox, external clients.
-- `api/` – HTTP controllers, DTOs, and the module's public contract for other modules.
+- `domain/` – aggregates, value objects, domain events, domain errors, repository interfaces and their tokens. Plain TypeScript. No NestJS, no ORM imports.
+- `application/` – use cases (commands and queries). Orchestrates the domain. Depends on `domain/`, its own `contracts/`, and other modules' `index.ts`.
+- `infrastructure/` – ORM entities, repository implementations, outbox, external clients, integration event handlers.
+- `api/` – HTTP controllers and DTOs. Controllers call application use cases.
+- `contracts/` – what other modules may use: plain types, interfaces, injection tokens, integration event shapes.
 
-Dependencies point inward: `api` and `infrastructure` depend on `application` and `domain`, never the other way. Use this when the domain has real business rules and several teams or areas. For a small CRUD app, plain feature modules (`arch-feature-modules`) are enough.
+`index.ts` re-exports only the Nest module and `contracts/`. Dependencies point inward: `api` → `application` → `domain`, and `infrastructure` → `application`, `domain`. Use this when the domain has real business rules and several teams or areas. For a small CRUD app, plain feature modules (`arch-feature-modules`) are enough.
 
 **Incorrect (feature folder with everything mixed, domain tied to ORM and HTTP):**
 
@@ -60,17 +61,19 @@ export class OrdersService {
 // │   ├── errors/order-locked.error.ts
 // │   └── order.repository.ts         // interface + token only
 // ├── application/
-// │   ├── commands/add-item/add-item.command.ts
-// │   ├── commands/add-item/add-item.handler.ts
-// │   └── queries/get-order/get-order.handler.ts
+// │   ├── commands/add-item.handler.ts
+// │   ├── queries/get-order.handler.ts
+// │   └── order-summaries.service.ts  // implements the contract below
 // ├── infrastructure/
 // │   ├── persistence/order.orm-entity.ts
 // │   ├── persistence/order.mapper.ts
 // │   └── persistence/typeorm-order.repository.ts
 // ├── api/
 // │   ├── orders.controller.ts
-// │   └── ordering.facade.ts          // public contract for other modules
-// ├── index.ts                        // exports ONLY the public contract
+// │   └── dto/add-item.dto.ts
+// ├── contracts/
+// │   └── order-summaries.ts          // interface + token for other modules
+// ├── index.ts                        // exports ONLY the Nest module and contracts/
 // └── ordering.module.ts
 
 // domain/order.ts – no framework imports
@@ -91,26 +94,31 @@ export class Order {
   }
 }
 
+// contracts/order-summaries.ts – plain types and a token, no logic
+export interface OrderSummaryDto { orderId: string; totalCents: number }
+export interface OrderSummaries { forCustomer(customerId: string): Promise<OrderSummaryDto[]> }
+export const ORDER_SUMMARIES = Symbol('ORDER_SUMMARIES');
+
 // ordering.module.ts
 @Module({
-  imports: [CqrsModule, TypeOrmModule.forFeature([OrderOrmEntity]), CatalogModule],
+  imports: [TypeOrmModule.forFeature([OrderOrmEntity]), CatalogModule], // CatalogModule from '../catalog' (its index.ts)
   controllers: [OrdersController],
   providers: [
     AddItemHandler,
     GetOrderHandler,
+    OrderSummariesService,
+    { provide: ORDER_SUMMARIES, useExisting: OrderSummariesService },
     { provide: ORDER_REPOSITORY, useClass: TypeOrmOrderRepository },
-    OrderingFacade,
   ],
-  exports: [OrderingFacade], // nothing else leaves the module
+  exports: [ORDER_SUMMARIES], // nothing else leaves the module
 })
 export class OrderingModule {}
 
 // index.ts – the only file other modules may import from
 export { OrderingModule } from './ordering.module';
-export { OrderingFacade } from './api/ordering.facade';
-export type { OrderSummaryDto } from './api/order-summary.dto';
+export * from './contracts/order-summaries';
 ```
 
-Map domain errors to HTTP status codes in an exception filter (`error-use-exception-filters`), not inside the domain.
+Map domain errors to HTTP status codes in an exception filter (`error-use-exception-filters`), not inside the domain. Check the layer and module rules with dependency-cruiser in CI; the `nestjs-modular-monolith` skill sets this up.
 
 Reference: [Modular Monolith with DDD (kgrzybek)](https://github.com/kgrzybek/modular-monolith-with-ddd) · [NestJS Modules](https://docs.nestjs.com/modules)

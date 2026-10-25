@@ -97,11 +97,11 @@ export class OrderOrmEntity {
 providers: [{ provide: ORDER_REPOSITORY, useClass: TypeOrmOrderRepository }],
 
 // application/commands/place-order.handler.ts
-@CommandHandler(PlaceOrderCommand)
-export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
+@Injectable()
+export class PlaceOrderHandler {
   constructor(@Inject(ORDER_REPOSITORY) private readonly orders: OrderRepository) {}
 
-  async execute({ orderId }: PlaceOrderCommand): Promise<void> {
+  async execute(orderId: string): Promise<void> {
     const order = await this.orders.getById(orderId);
     order.place();               // rules checked inside the aggregate
     await this.orders.save(order);

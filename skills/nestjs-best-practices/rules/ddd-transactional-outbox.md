@@ -21,10 +21,10 @@ The outbox fixes this. Write the event as a row in an `outbox` table **in the sa
 **Incorrect (publish after commit, no retry, no dedupe):**
 
 ```typescript
-@CommandHandler(PlaceOrderCommand)
-export class PlaceOrderHandler implements ICommandHandler<PlaceOrderCommand> {
-  async execute(cmd: PlaceOrderCommand) {
-    const order = await this.orders.getById(cmd.orderId);
+@Injectable()
+export class PlaceOrderHandler {
+  async execute(orderId: string) {
+    const order = await this.orders.getById(orderId);
     order.place();
     await this.orders.save(order);
 
