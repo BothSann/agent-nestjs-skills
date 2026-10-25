@@ -1,16 +1,17 @@
 # Structure
 
-Examples are from a NestJS 12 ESM app that passes the rules (`.js` suffixes; drop them in CommonJS). `billing`/`catalog` are examples only.
+NestJS 12 ESM examples (`.js` suffixes; omit for CommonJS). `billing`/`catalog` are examples only.
 
 ```
 src/
-├── main.ts, app.module.ts      root files; AppModule imports each module from its index.ts
+├── main.ts, app.module.ts      root files; import modules through index.ts
 ├── app.module.spec.ts          compiles AppModule: proves the wiring
-├── shared/{domain,application,infrastructure,api}/   technical only, empty until needed
+├── shared/{domain,application,infrastructure,api}/   technical only; create on first use
 └── modules/<module>/
     ├── domain/                 entities, value objects, rules, domain errors, repository interfaces + tokens; plain TS
-    ├── application/commands/   use cases that change state
-    ├── application/queries/    use cases that read state; may query directly, return view objects
+    ├── application/
+    │   ├── commands/           create with the first write use case
+    │   └── queries/            create with the first read use case; may query directly, return view objects
     ├── infrastructure/         repository implementations, ORM entities, mappers, clients, integration event handlers
     ├── api/                    controllers, DTOs, guards, pipes
     ├── contracts/              types, interfaces, tokens, event shapes other modules may use; no logic
@@ -18,11 +19,13 @@ src/
     └── index.ts                exports the Nest module and contracts/ only
 ```
 
-Integration event handlers live in infrastructure/ (inbox, transactions), then call a use case.
+`add-module.mjs`: five layers with `.gitkeep` (including `application/.gitkeep`), `<name>.module.ts`, `index.ts`. Commands/queries and shared layers are created on first use; no shared files or base classes by default.
+
+Integration event handlers: infrastructure/ (inbox, transactions), calling a use case.
 
 ## Use cases: CQRS shape, no bus
 
-Plain injectable classes; controllers inject them, so a missing provider fails at startup. A command loads an aggregate, calls one method, saves.
+Controllers inject use cases; missing providers fail at startup. Commands load, change, save aggregates.
 
 ```ts
 // modules/billing/application/commands/create-invoice.handler.ts
@@ -59,7 +62,7 @@ export class InvoicesController {
 
 ## Calling another module
 
-The provider puts an interface and token in contracts/, binds it, and exports only the token:
+Define contracts/ interface/token; bind and export the token:
 
 ```ts
 // modules/catalog/contracts/product-prices.ts
@@ -83,13 +86,13 @@ export { CatalogModule } from './catalog.module.js';
 export * from './contracts/product-prices.js';
 ```
 
-The consumer imports from index.ts only: `imports: [CatalogModule]` in `billing.module.ts`, and `import { PRODUCT_PRICES, type ProductPrices } from '../../../catalog/index.js'` in the handler. To react to something instead of asking, use integration events (options.md).
+Consumer: `imports: [CatalogModule]` in `billing.module.ts`; `import { PRODUCT_PRICES, type ProductPrices } from '../../../catalog/index.js'` in the handler. Import only through index.ts. For reactions, use integration events (options.md).
 
 ## Shared kernel
 
-Add a file only when two modules need the same technical piece; never business concepts. No base classes by default (DDD needs no `AggregateRoot` superclass); add one when several aggregates repeat code.
+Share technical code only when two modules need it; never business concepts. Add base classes only for repeated aggregate code; DDD requires no `AggregateRoot` superclass.
 
-Common first need: domain errors → HTTP, since api/ cannot import domain classes:
+Domain errors → HTTP without importing module domain classes into api/:
 
 ```ts
 // shared/domain/domain-error.ts
@@ -119,4 +122,4 @@ export class DomainErrorFilter implements ExceptionFilter {
 
 ## Tests
 
-Unit tests sit next to code and may cross layers inside a module (an application test with an in-memory repository); module boundaries still apply. Domain tests need no Nest testing module or database.
+Colocate unit tests. They may cross layers within a module (e.g. in-memory repositories), but module boundaries still apply. Domain tests need no Nest testing module or database.

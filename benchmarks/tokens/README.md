@@ -62,6 +62,28 @@ What changed:
 
 After the PR #18 review fixes (+50 entrypoint tokens for the new-mode safety checks): the skill's 23 tests pass, and the full workflow was re-run on a `nest new` NestJS 12 app (build, lint, unit, e2e, `arch` with 0 violations, self-test 46/46). Scripts and the config's rule bodies were not changed by the trim.
 
+## Scaffold folder clarification (issue #19)
+
+Baseline: `64bad479f94ae624760f2a2cbab42f5d6194cf5b`, saved in `scaffold-folders-before.json`. `scaffold-folders-after.json` measures the clarified folder instructions and shorter surrounding prose using the same tokenizer and file plans. No code examples, safety checks, scripts, or rules were removed.
+
+| Metric/scenario | Before | After | Tokens saved |
+|---|---:|---:|---:|
+| Discovery description | 47 | 47 | 0 |
+| Entrypoint / mm-add-module | 857 | 842 | 15 |
+| mm-new-project | 1,934 | 1,919 | 15 |
+| mm-module-code | 2,009 | 2,008 | 1 |
+| mm-existing-project | 2,487 | 2,472 | 15 |
+| mm-option | 1,320 | 1,305 | 15 |
+
+The untrimmed documentation fix would have raised the entrypoint to 919 tokens and module-code context to 2,191. The final wording saves 77 and 183 tokens respectively versus that draft, while explaining which folders are generated and which are created on first use. Other skills' scenarios are unchanged. These are instruction-context counts, not measured runtime usage or proof of task accuracy; 28 focused skill/benchmark tests passed, and the preserved instructions were reviewed against the original.
+
+Recompute the baseline with the baseline commit checked out separately, then compare the working tree:
+
+```text
+node scripts/benchmark-tokens.mjs --root <baseline-checkout> --label issue-19-before --output benchmarks/tokens/scaffold-folders-before.json
+node scripts/benchmark-tokens.mjs --compare benchmarks/tokens/scaffold-folders-before.json --label issue-19-after --output benchmarks/tokens/scaffold-folders-after.json
+```
+
 ## Reproduce
 
 From the repository root, after installing the development dependencies in `scripts/`:
