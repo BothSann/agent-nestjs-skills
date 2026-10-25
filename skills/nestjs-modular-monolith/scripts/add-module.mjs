@@ -139,23 +139,30 @@ function registerIn(text, cls, importLine) {
   const at = last.index + last[0].length;
   text = `${text.slice(0, at)}\n${importLine}${text.slice(at)}`;
 
+  // Edit only what can be read for sure: an object literal whose top-level `imports`
+  // is missing or an array literal. Anything else (a variable, a spread, a duplicate
+  // key, `@Module(metadata)`) is left untouched for manual registration.
   const start = text.indexOf('@Module(') + '@Module('.length;
-  if (/^\{\s*\}/.test(text.slice(start))) {
-    return text.slice(0, start) + text.slice(start).replace(/^\{\s*\}/, `{ imports: [${cls}] }`);
+  const objOpen = skipBlank(text, start);
+  if (text[objOpen] !== '{') return null;
+  const objClose = closing(text, objOpen, '{', '}');
+  if (objClose < 0) return null;
+  if (skipBlank(text, objOpen + 1) === objClose) {
+    return `${text.slice(0, objOpen)}{ imports: [${cls}] }${text.slice(objClose + 1)}`;
   }
-  const key = /\bimports\s*:\s*\[/g;
-  key.lastIndex = start;
-  const m = key.exec(text);
-  const decoEnd = closing(text, start - 1, '(', ')');
-  if (!m || m.index > decoEnd) {
-    // No imports yet: add the key first.
-    const open = text.indexOf('{', start);
-    const indent = (text.slice(open + 1).match(/^\n([ \t]+)/) ?? [, '  '])[1];
-    return `${text.slice(0, open + 1)}\n${indent}imports: [${cls}],${text.slice(open + 1)}`;
+  const props = topLevelProps(text, objOpen, objClose);
+  if (!props || props.some((p) => p.spread)) return null;
+  const found = props.filter((p) => p.name === 'imports');
+  if (found.length > 1) return null;
+  if (!found.length) {
+    const indent = (text.slice(objOpen + 1).match(/^\n([ \t]+)/) ?? [, ' '])[1];
+    const lead = text[objOpen + 1] === '\n' ? '\n' : '';
+    return `${text.slice(0, objOpen + 1)}${lead || ' '}${lead ? indent : ''}imports: [${cls}],${text.slice(objOpen + 1)}`;
   }
-  const open = m.index + m[0].length - 1;
+  if (found[0].valueStart < 0 || text[found[0].valueStart] !== '[') return null;
+  const open = found[0].valueStart;
   const close = closing(text, open, '[', ']');
-  if (close < 0) return null;
+  if (close < 0 || close > objClose) return null;
   const inner = text.slice(open + 1, close);
   if (!inner.trim()) return `${text.slice(0, open + 1)}${cls}${text.slice(close)}`;
   if (inner.includes('\n')) {
@@ -168,17 +175,75 @@ function registerIn(text, cls, importLine) {
   return `${text.slice(0, open + 1)}${inner.replace(/,?\s*$/, '')}, ${cls}${text.slice(close)}`;
 }
 
+// Index of the next character that is not whitespace or a comment.
+function skipBlank(text, i) {
+  for (;;) {
+    while (/\s/.test(text[i] ?? '')) i++;
+    if (text.startsWith('//', i)) i = text.indexOf('\n', i) < 0 ? text.length : text.indexOf('\n', i);
+    else if (text.startsWith('/*', i)) i = text.indexOf('*/', i) < 0 ? text.length : text.indexOf('*/', i) + 2;
+    else return i;
+  }
+}
+
+// Index after a string or comment starting at i, or i when there is none.
+function skipToken(text, i) {
+  const c = text[i];
+  if (c === "'" || c === '"' || c === '`') {
+    for (let j = i + 1; j < text.length; j++) {
+      if (text[j] === '\\') j++;
+      else if (text[j] === c) return j + 1;
+    }
+    return text.length;
+  }
+  if (text.startsWith('//', i) || text.startsWith('/*', i)) return skipBlank(text, i);
+  return i;
+}
+
 function closing(text, open, a, b) {
   let depth = 0;
   for (let i = open; i < text.length; i++) {
-    const c = text[i];
-    if (c === "'" || c === '"' || c === '`') {
-      i = text.indexOf(c, i + 1);
-      if (i < 0) return -1;
-    } else if (c === a) depth++;
-    else if (c === b && --depth === 0) return i;
+    const next = skipToken(text, i);
+    if (next !== i) {
+      i = next - 1;
+      continue;
+    }
+    if (text[i] === a) depth++;
+    else if (text[i] === b && --depth === 0) return i;
   }
   return -1;
+}
+
+// Top-level properties of the object literal between objOpen and objClose:
+// { name, spread, valueStart } where valueStart is -1 for shorthand (`{ imports }`).
+function topLevelProps(text, objOpen, objClose) {
+  const props = [];
+  let depth = 0;
+  let atStart = true;
+  for (let i = objOpen + 1; i < objClose; i++) {
+    const next = skipToken(text, i);
+    if (next !== i) {
+      i = next - 1;
+      continue;
+    }
+    const c = text[i];
+    if (/\s/.test(c)) continue;
+    if (depth === 0 && atStart) {
+      atStart = false;
+      if (text.startsWith('...', i)) {
+        props.push({ spread: true });
+        continue;
+      }
+      const m = /^(['"]?)([A-Za-z_$][\w$]*)\1\s*(:?)/.exec(text.slice(i));
+      if (!m) return null;
+      props.push({ name: m[2], valueStart: m[3] ? skipBlank(text, i + m[0].length) : -1 });
+      i += m[0].length - 1;
+      continue;
+    }
+    if ('([{'.includes(c)) depth++;
+    else if (')]}'.includes(c)) depth--;
+    else if (c === ',' && depth === 0) atStart = true;
+  }
+  return props;
 }
 
 if (!dryRun) {

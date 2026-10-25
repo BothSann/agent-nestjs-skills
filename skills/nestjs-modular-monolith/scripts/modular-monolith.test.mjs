@@ -102,7 +102,7 @@ test('add-module handles @Module({}) and a decorator without imports', () => {
   });
   node('add-module.mjs', later, 'billing');
   const text = readFileSync(join(later, 'src/app.module.ts'), 'utf8');
-  assert.match(text, /@Module\(\{\n {2}imports: \[BillingModule\], providers: \[\] \}\)/);
+  assert.match(text, /@Module\(\{ imports: \[BillingModule\], providers: \[\] \}\)/);
   assert.match(text, /other = \{ imports: \[\] \}/);
 });
 
@@ -134,19 +134,110 @@ test('add-module reports manual registration when no root module exists', () => 
   assert.deepEqual(out.updated, []);
 });
 
+test('add-module leaves metadata it cannot read for sure untouched', () => {
+  const unsafe = {
+    variable: '@Module({ imports: ROOT_IMPORTS })',
+    shorthand: '@Module({ imports })',
+    spread: '@Module({ ...base, providers: [] })',
+    duplicate: '@Module({ imports: [], imports: [] })',
+    notLiteral: '@Module(metadata)',
+  };
+  for (const [label, deco] of Object.entries(unsafe)) {
+    const body = `import { Module } from '@nestjs/common';\n\n${deco}\nexport class AppModule {}\n`;
+    const dir = project({ ...ESM_APP, 'src/app.module.ts': body });
+    const out = json(node('add-module.mjs', dir, 'billing'));
+    assert.match(out.manual ?? '', /Could not edit src\/app\.module\.ts safely/, label);
+    assert.deepEqual(out.updated, [], label);
+    assert.equal(readFileSync(join(dir, 'src/app.module.ts'), 'utf8'), body, label);
+  }
+});
+
+test('add-module ignores imports keys nested inside other metadata and comments', () => {
+  const dir = project({
+    ...ESM_APP,
+    'src/app.module.ts':
+      "import { Module } from '@nestjs/common';\n\n@Module({\n  // imports: [Old],\n  providers: [Db.forRootAsync({ imports: [ConfigModule] })],\n  controllers: ['a, b'],\n})\nexport class AppModule {}\n",
+  });
+  assert.equal(json(node('add-module.mjs', dir, 'billing')).manual, null);
+  const app = readFileSync(join(dir, 'src/app.module.ts'), 'utf8');
+  assert.match(app, /@Module\(\{\n {2}imports: \[BillingModule\],\n {2}\/\/ imports: \[Old\],/);
+  assert.match(app, /forRootAsync\(\{ imports: \[ConfigModule\] \}\)/);
+});
+
 // ---------- inspect ----------
 
-test('inspect reports toolchain, coverage, and fresh Nest projects', () => {
+test('inspect reports toolchain and coverage; starter names alone are not a fresh project', () => {
   const dir = project({ ...ESM_APP, 'src/app.controller.ts': "import { x } from './app.service.js';\n", 'src/app.service.ts': '' });
   const r = json(node('inspect.mjs', dir, '--no-cruise'));
   assert.equal(r.nest.found, true);
   assert.equal(r.packageManager.name, 'npm');
   assert.equal(r.packageManager.commands.addDev, 'npm install -D');
+  assert.equal(r.packageManager.yarnPnp, false);
+  assert.deepEqual(r.blockers, []);
   assert.equal(r.moduleSystem.importSuffix, '.js');
   assert.equal(r.testRunner, 'vitest');
-  assert.equal(r.layout.freshNestProject, true);
+  assert.equal(r.layout.freshNestProject, false);
+  assert.equal(r.layout.starterFiles['app.service.ts'], 'changed');
   assert.deepEqual(r.layout.outsideSample, ['src/app.controller.ts', 'src/app.service.ts']);
   assert.equal(r.settingsSource, 'defaults');
+});
+
+// The `nest new` output (@nestjs/schematics 12, observe off), CommonJS style.
+const STARTER_APP = {
+  'package.json': JSON.stringify({ dependencies: { '@nestjs/core': '^12.0.0' } }),
+  'src/main.ts': "import { NestFactory } from '@nestjs/core';\nimport { AppModule } from './app.module';\n\nasync function bootstrap() {\n  const app = await NestFactory.create(AppModule);\n  await app.listen(process.env.PORT ?? 3000);\n}\nvoid bootstrap();\n",
+  'src/app.module.ts': "import { Module } from '@nestjs/common';\nimport { AppController } from './app.controller';\nimport { AppService } from './app.service';\n\n@Module({\n  imports: [],\n  controllers: [AppController],\n  providers: [AppService],\n})\nexport class AppModule {}\n",
+  'src/app.service.ts': "import { Injectable } from '@nestjs/common';\n\n@Injectable()\nexport class AppService {\n  getHello(): string {\n    return 'Hello World!';\n  }\n}\n",
+  'src/app.controller.ts': "import { Controller, Get } from '@nestjs/common';\nimport { AppService } from './app.service';\n\n@Controller()\nexport class AppController {\n  constructor(private readonly appService: AppService) {}\n\n  @Get()\n  getHello(): string {\n    return this.appService.getHello();\n  }\n}\n",
+};
+const esm = (files) =>
+  Object.fromEntries(Object.entries(files).map(([k, v]) => [k, v.replace(/from '(\.\/[^']+)'/g, "from '$1.js'")]));
+
+test('inspect marks untouched nest new starters as fresh, in CommonJS and ESM', () => {
+  for (const files of [STARTER_APP, esm(STARTER_APP)]) {
+    const r = json(node('inspect.mjs', project(files), '--no-cruise'));
+    assert.equal(r.layout.freshNestProject, true);
+    assert.ok(Object.values(r.layout.starterFiles).every((s) => s === 'untouched'));
+  }
+  // Formatting differences (double quotes, no semicolons) are still the starter.
+  const formatted = { ...STARTER_APP, 'src/app.service.ts': STARTER_APP['src/app.service.ts'].replaceAll("'", '"').replaceAll(';', '') };
+  assert.equal(json(node('inspect.mjs', project(formatted), '--no-cruise')).layout.freshNestProject, true);
+});
+
+test('inspect keeps an app with real code in starter files out of new mode', () => {
+  const cases = {
+    'src/app.service.ts': STARTER_APP['src/app.service.ts'].replace("return 'Hello World!';", 'return charge(4200);'),
+    'src/app.controller.ts': STARTER_APP['src/app.controller.ts'].replace("@Get()", "@Get('status')"),
+    'src/app.module.ts': STARTER_APP['src/app.module.ts'].replace('imports: []', 'imports: [ConfigModule.forRoot()]'),
+  };
+  for (const [file, body] of Object.entries(cases)) {
+    const r = json(node('inspect.mjs', project({ ...STARTER_APP, [file]: body }), '--no-cruise'));
+    assert.equal(r.layout.freshNestProject, false, file);
+    assert.equal(r.layout.starterFiles[file.slice(4)], 'changed', file);
+  }
+  const extraFile = json(node('inspect.mjs', project({ ...STARTER_APP, 'src/users.ts': '' }), '--no-cruise'));
+  assert.equal(extraFile.layout.freshNestProject, false);
+});
+
+test("inspect reports Yarn Plug'n'Play as a blocker", () => {
+  const yarn = { ...ESM_APP, 'package.json': JSON.stringify({ packageManager: 'yarn@4.5.0' }) };
+  const pnpFile = json(node('inspect.mjs', project({ ...yarn, '.pnp.cjs': '' }), '--no-cruise'));
+  assert.equal(pnpFile.packageManager.yarnPnp, true);
+  assert.match(pnpFile.blockers[0], /nodeLinker: node-modules/);
+  const pnpDefault = json(node('inspect.mjs', project({ ...yarn, '.yarnrc.yml': 'enableTelemetry: false\n' }), '--no-cruise'));
+  assert.equal(pnpDefault.packageManager.yarnPnp, true);
+  const linker = json(node('inspect.mjs', project({ ...yarn, '.yarnrc.yml': 'nodeLinker: node-modules\n' }), '--no-cruise'));
+  assert.equal(linker.packageManager.yarnPnp, false);
+  assert.deepEqual(linker.blockers, []);
+  const classic = json(node('inspect.mjs', project({ ...ESM_APP, 'package.json': '{}', 'yarn.lock': '' }), '--no-cruise'));
+  assert.equal(classic.packageManager.yarnPnp, false);
+});
+
+test("self-test explains Yarn Plug'n'Play instead of a missing install", () => {
+  const dir = project({ 'package.json': '{}', '.pnp.cjs': '', '.dependency-cruiser.cjs': template });
+  const r = node('arch-selftest.mjs', dir);
+  assert.equal(r.status, 2);
+  assert.match(r.stderr, /Plug'n'Play is not supported/);
 });
 
 test('inspect finds legacy code, module candidates, and broken modules', () => {

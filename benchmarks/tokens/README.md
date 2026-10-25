@@ -44,15 +44,15 @@ Baseline: the first working version of the skill (`modular-monolith-before.json`
 | Metric | Before | After | Reduction |
 |---|---:|---:|---:|
 | Description (loaded in every session) | 84 | 47 | 44.0% |
-| Entrypoint `SKILL.md` | 1,261 | 807 | 36.0% |
+| Entrypoint `SKILL.md` | 1,261 | 857 | 32.0% |
 
 | Scenario | Files | Before | After, same files | After, routed | Reduction |
 |---|---|---:|---:|---:|---:|
-| mm-new-project | SKILL, rules, config template | 4,239 | 3,399 | 1,884 | 55.6% |
-| mm-add-module | SKILL | 1,261 | 807 | 807 | 36.0% |
-| mm-module-code | SKILL, structure | 2,935 | 1,959 | 1,959 | 33.3% |
-| mm-existing-project | SKILL, existing-project, rules, config template | 4,962 | 3,952 | 2,437 | 50.9% |
-| mm-option | SKILL, options | 1,888 | 1,270 | 1,270 | 32.7% |
+| mm-new-project | SKILL, rules, config template | 4,239 | 3,449 | 1,934 | 54.4% |
+| mm-add-module | SKILL | 1,261 | 857 | 857 | 32.0% |
+| mm-module-code | SKILL, structure | 2,935 | 2,009 | 2,009 | 31.6% |
+| mm-existing-project | SKILL, existing-project, rules, config template | 4,962 | 4,002 | 2,487 | 49.9% |
+| mm-option | SKILL, options | 1,888 | 1,320 | 1,320 | 30.1% |
 
 What changed:
 
@@ -60,7 +60,7 @@ What changed:
 - Routing: the agent reads only the template's 13-line `settings` block (187 tokens) instead of the whole config (1,702). Scenarios count this as `assets/dependency-cruiser.cjs#L1-13`; the whole file is still recorded for the same-files column.
 - Not cut: every rule name, every setting, the safety statements (never weaken rules, migration preparation, baseline is not a clean bill of health and may only shrink), and the limits of import rules. Tests in `modular-monolith.test.mjs` fail if any of these go missing, or if a doc links to a missing file.
 
-Accuracy after trimming: the skill's 16 tests pass, and the full workflow was re-run on a `nest new` NestJS 12 app (build, lint, unit, e2e, `arch` with 0 violations, self-test 46/46). Scripts and the config's rule bodies were not changed by the trim.
+After the PR #18 review fixes (+50 entrypoint tokens for the new-mode safety checks): the skill's 23 tests pass, and the full workflow was re-run on a `nest new` NestJS 12 app (build, lint, unit, e2e, `arch` with 0 violations, self-test 46/46). Scripts and the config's rule bodies were not changed by the trim.
 
 ## Reproduce
 
@@ -68,7 +68,7 @@ From the repository root, after installing the development dependencies in `scri
 
 ```text
 node scripts/benchmark-tokens.mjs --compare benchmarks/tokens/before.json --output benchmarks/tokens/after.json
-node scripts/benchmark-tokens.mjs --compare benchmarks/tokens/modular-monolith-before.json --output benchmarks/tokens/modular-monolith-after.json
+node scripts/benchmark-tokens.mjs --compare benchmarks/tokens/modular-monolith-before.json --label mm-after-optimization --output benchmarks/tokens/modular-monolith-after.json
 node --test scripts/benchmark-tokens.test.mjs
 ```
 

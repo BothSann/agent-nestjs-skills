@@ -29,9 +29,9 @@
     },
     {
       "skill": "nestjs-modular-monolith",
-      "entryTokens": 807,
+      "entryTokens": 857,
       "descriptionTokens": 47,
-      "corpusTokens": 4456
+      "corpusTokens": 4520
     }
   ],
   "scenarios": [
@@ -110,7 +110,7 @@
         "skills/nestjs-modular-monolith/references/rules.md",
         "skills/nestjs-modular-monolith/assets/dependency-cruiser.cjs#L1-13"
       ],
-      "tokens": 1884
+      "tokens": 1934
     },
     {
       "id": "mm-add-module",
@@ -118,7 +118,7 @@
       "files": [
         "skills/nestjs-modular-monolith/SKILL.md"
       ],
-      "tokens": 807
+      "tokens": 857
     },
     {
       "id": "mm-module-code",
@@ -127,7 +127,7 @@
         "skills/nestjs-modular-monolith/SKILL.md",
         "skills/nestjs-modular-monolith/references/structure.md"
       ],
-      "tokens": 1959
+      "tokens": 2009
     },
     {
       "id": "mm-existing-project",
@@ -138,7 +138,7 @@
         "skills/nestjs-modular-monolith/references/rules.md",
         "skills/nestjs-modular-monolith/assets/dependency-cruiser.cjs#L1-13"
       ],
-      "tokens": 2437
+      "tokens": 2487
     },
     {
       "id": "mm-option",
@@ -147,7 +147,7 @@
         "skills/nestjs-modular-monolith/SKILL.md",
         "skills/nestjs-modular-monolith/references/options.md"
       ],
-      "tokens": 1270
+      "tokens": 1320
     }
   ],
   "files": {
@@ -536,8 +536,8 @@
       "sha256": "b15e431bdc9b2d88097653e3b7178bd35a7f99f97315a7843a57f81d6bbb5a36"
     },
     "skills/nestjs-modular-monolith/README.md": {
-      "tokens": 591,
-      "sha256": "f97b55e58425dfbc63a1d621d2967606d098ea796a79a0b7ba13a65cd4262f5b"
+      "tokens": 605,
+      "sha256": "96537a30c87a66bbf197cc52a85fc4cb1f262a16c81e73843f6c2e4da3370a2c"
     },
     "skills/nestjs-modular-monolith/references/existing-project.md": {
       "tokens": 553,
@@ -556,8 +556,8 @@
       "sha256": "f693f39dd754ef243102e3616308016eb86b93cd3c84b3b03bc82769d3f058da"
     },
     "skills/nestjs-modular-monolith/SKILL.md": {
-      "tokens": 807,
-      "sha256": "4ceb17d47b5e023bc2e27c8370f471bdccf0a59421555842866104cc20d46707"
+      "tokens": 857,
+      "sha256": "bac66d63f6bbd232c5dd30e2f678d52191b576ea49074c607dfaf426f0d38d52"
     },
     "skills/nestjs-modular-monolith/assets/dependency-cruiser.cjs": {
       "tokens": 1702,
@@ -608,37 +608,37 @@
     {
       "scenario": "mm-new-project",
       "before": 4239,
-      "afterSameFiles": 3399,
-      "afterRouted": 1884,
-      "savedPercent": 55.6
+      "afterSameFiles": 3449,
+      "afterRouted": 1934,
+      "savedPercent": 54.4
     },
     {
       "scenario": "mm-add-module",
       "before": 1261,
-      "afterSameFiles": 807,
-      "afterRouted": 807,
-      "savedPercent": 36
+      "afterSameFiles": 857,
+      "afterRouted": 857,
+      "savedPercent": 32
     },
     {
       "scenario": "mm-module-code",
       "before": 2935,
-      "afterSameFiles": 1959,
-      "afterRouted": 1959,
-      "savedPercent": 33.3
+      "afterSameFiles": 2009,
+      "afterRouted": 2009,
+      "savedPercent": 31.6
     },
     {
       "scenario": "mm-existing-project",
       "before": 4962,
-      "afterSameFiles": 3952,
-      "afterRouted": 2437,
-      "savedPercent": 50.9
+      "afterSameFiles": 4002,
+      "afterRouted": 2487,
+      "savedPercent": 49.9
     },
     {
       "scenario": "mm-option",
       "before": 1888,
-      "afterSameFiles": 1270,
-      "afterRouted": 1270,
-      "savedPercent": 32.7
+      "afterSameFiles": 1320,
+      "afterRouted": 1320,
+      "savedPercent": 30.1
     }
   ]
 }

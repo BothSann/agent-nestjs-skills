@@ -2,7 +2,7 @@
 
 Sets up a NestJS app as a modular monolith: business modules with `domain/`, `application/`, `infrastructure/`, `api/`, and `contracts/` layers, a public `index.ts` per module, and dependency-cruiser rules that fail the build when an import crosses a boundary. A self-test proves the rules work.
 
-Works with any business domain, database, ORM, and package manager (npm, pnpm, Yarn, Bun), and with ESM or CommonJS.
+Works with any business domain, database, and ORM; with npm, pnpm, Yarn (node-modules linker; Plug'n'Play is reported as a blocker), or Bun; and with ESM or CommonJS.
 
 ## What it covers
 

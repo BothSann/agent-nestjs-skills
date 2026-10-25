@@ -29,6 +29,62 @@ const DEFAULTS = {
 const MODULE_LAYERS = ['domain', 'application', 'infrastructure', 'api', 'contracts'];
 const SHARED_LAYERS = ['domain', 'application', 'infrastructure', 'api'];
 const NEST_NEW_FILES = ['app.controller.ts', 'app.controller.spec.ts', 'app.service.ts', 'app.module.ts', 'main.ts'];
+// `nest new` starter files (@nestjs/schematics 12, same in CommonJS and ESM apart from `.js`
+// suffixes). New mode deletes or resets these, so each must match exactly; any edit means
+// the app has real code and stays in existing mode.
+const STARTER = {
+  'app.service.ts': `import { Injectable } from '@nestjs/common';
+@Injectable()
+export class AppService {
+  getHello(): string {
+    return 'Hello World!';
+  }
+}`,
+  'app.controller.ts': `import { Controller, Get } from '@nestjs/common';
+import { AppService } from './app.service';
+@Controller()
+export class AppController {
+  constructor(private readonly appService: AppService) {}
+  @Get()
+  getHello(): string {
+    return this.appService.getHello();
+  }
+}`,
+  'app.controller.spec.ts': `import { Test, TestingModule } from '@nestjs/testing';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+describe('AppController', () => {
+  let appController: AppController;
+  beforeEach(async () => {
+    const app: TestingModule = await Test.createTestingModule({
+      controllers: [AppController],
+      providers: [AppService],
+    }).compile();
+    appController = app.get<AppController>(AppController);
+  });
+  describe('root', () => {
+    it('should return "Hello World!"', () => {
+      expect(appController.getHello()).toBe('Hello World!');
+    });
+  });
+});`,
+  'app.module.ts': `import { Module } from '@nestjs/common';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
+@Module({
+  imports: [],
+  controllers: [AppController],
+  providers: [AppService],
+})
+export class AppModule {}`,
+};
+// Ignore formatting only: whitespace, semicolons, quote style, trailing commas, `.js` suffixes.
+const normalizeCode = (s) =>
+  s
+    .replace(/(['"])(\.{1,2}\/[^'"]+)\.js\1/g, '$1$2$1')
+    .replace(/"/g, "'")
+    .replace(/[\s;]/g, '')
+    .replace(/,([}\])])/g, '$1');
 const CODE = /\.(ts|tsx|js|mjs|cjs)$/;
 
 const toPosix = (p) => p.replaceAll('\\', '/');
@@ -112,13 +168,24 @@ function packageManager() {
     if (found || existsSync(join(dir, '.git')) || dirname(dir) === dir) break;
   }
   const name = declared ?? found?.name ?? null;
+  // Yarn Plug'n'Play has no node_modules, and the scripts find dependency-cruiser there.
+  // Yarn 2+ uses PnP unless .yarnrc.yml sets another nodeLinker.
+  let yarnPnp = false;
+  if (name === 'yarn') {
+    for (let dir = root; ; dir = dirname(dir)) {
+      const rc = join(dir, '.yarnrc.yml');
+      if (existsSync(join(dir, '.pnp.cjs'))) yarnPnp = true;
+      else if (existsSync(rc)) yarnPnp = !/^\s*nodeLinker:\s*["']?(node-modules|pnpm)/m.test(readFileSync(rc, 'utf8'));
+      if (yarnPnp || existsSync(rc) || existsSync(join(dir, '.git')) || dirname(dir) === dir) break;
+    }
+  }
   const commands = {
     npm: { install: 'npm install', addDev: 'npm install -D', run: 'npm run', exec: 'npx' },
     pnpm: { install: 'pnpm install', addDev: 'pnpm add -D', run: 'pnpm run', exec: 'pnpm exec' },
     yarn: { install: 'yarn install', addDev: 'yarn add -D', run: 'yarn run', exec: 'yarn' },
     bun: { install: 'bun install', addDev: 'bun add -d', run: 'bun run', exec: 'bunx' },
   }[name];
-  return { name, source: declared ? 'package.json packageManager' : (found?.source ?? null), commands: commands ?? null };
+  return { name, source: declared ? 'package.json packageManager' : (found?.source ?? null), commands: commands ?? null, yarnPnp };
 }
 
 function tsconfigInfo() {
@@ -212,6 +279,11 @@ function layout(files) {
   ];
 
   const srcEntries = existsSync(join(root, src)) ? readdirSync(join(root, src)) : [];
+  const starterFiles = Object.fromEntries(
+    Object.keys(STARTER)
+      .filter((f) => srcEntries.includes(f))
+      .map((f) => [f, normalizeCode(readFileSync(join(root, src, f), 'utf8')) === normalizeCode(STARTER[f]) ? 'untouched' : 'changed']),
+  );
   return {
     sourceFiles: relFiles.length,
     coveredFiles: relFiles.length - outside.length,
@@ -221,7 +293,13 @@ function layout(files) {
     modules,
     sharedExists: existsSync(join(root, shared)),
     featureModuleCandidates: candidates,
-    freshNestProject: srcEntries.length > 0 && srcEntries.every((f) => NEST_NEW_FILES.includes(f)),
+    // True only when every file new mode deletes or resets is untouched starter code.
+    freshNestProject:
+      srcEntries.length > 0 &&
+      srcEntries.every((f) => NEST_NEW_FILES.includes(f)) &&
+      ['app.module.ts', 'app.service.ts'].every((f) => starterFiles[f]) &&
+      Object.values(starterFiles).every((s) => s === 'untouched'),
+    starterFiles,
   };
 }
 
@@ -260,15 +338,19 @@ const scripts = pkg.scripts ?? {};
 const archScripts = Object.entries(scripts).filter(([, cmd]) => /depcruise|dependency-cruis/.test(cmd));
 const baselinePath = join(root, '.dependency-cruiser-known-violations.json');
 
+const pm = packageManager();
 const report = {
   root: toPosix(root),
+  blockers: pm.yarnPnp
+    ? ["Yarn Plug'n'Play is not supported: set `nodeLinker: node-modules` in .yarnrc.yml and run `yarn install`, or stop."]
+    : [],
   nest: {
     found: Boolean(deps['@nestjs/core']),
     version: deps['@nestjs/core'] ?? null,
     monorepo: Boolean(nestCli?.monorepo),
     projects: nestCli?.projects ? Object.fromEntries(Object.entries(nestCli.projects).map(([k, v]) => [k, v.sourceRoot ?? v.root])) : null,
   },
-  packageManager: packageManager(),
+  packageManager: pm,
   moduleSystem: {
     packageType: pkg.type ?? 'commonjs',
     importSuffix: importSuffix(srcFiles),
