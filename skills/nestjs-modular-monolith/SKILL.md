@@ -17,7 +17,7 @@ Read [structure.md](references/structure.md) for module code, [rules.md](referen
 1. `node <skill-dir>/scripts/inspect.mjs <root> --no-cruise` (read only). Stop/report `blockers`. Use `packageManager.commands`. For `nest.monorepo`, ask which app and set its paths.
 2. **New** only after `nest new <name> --package-manager <pm> --strict` in this session or `layout.freshNestProject: true` (untouched starters). Otherwise **existing**: follow existing-project.md; report migration preparation.
 3. Install `dependency-cruiser` with `addDev`.
-4. Copy [assets/dependency-cruiser.cjs](assets/dependency-cruiser.cjs) to `<root>/.dependency-cruiser.cjs`. Read only its first 13 lines; edit only `settings`. Keep the hidden `settings` export.
+4. Copy [assets/dependency-cruiser.cjs](assets/dependency-cruiser.cjs) to `<root>/.dependency-cruiser.cjs`. Read it only through the `---- Rules below` line; edit only `settings`. Keep the hidden `settings` export.
 5. Copy [scripts/arch-selftest.mjs](scripts/arch-selftest.mjs) to `<root>/tools/arch-selftest.mjs`.
 6. Scripts: `arch` = `depcruise <sourceRoot> [test] --config .dependency-cruiser.cjs` (existing: add `--ignore-known .dependency-cruiser-known-violations.json`); `arch:selftest` = `node tools/arch-selftest.mjs .`. Include both in existing check/CI scripts; create CI files only if asked.
 7. New mode: delete `AppController`, `AppService`, and their spec only when `layout.starterFiles` marks them `untouched`. Remove their `AppModule` wiring; preserve CLI-added imports (e.g. `ObserveModule`). Add `src/app.module.spec.ts` compiling `AppModule` and an e2e boot test (`GET /` → 404). Match import suffixes.
