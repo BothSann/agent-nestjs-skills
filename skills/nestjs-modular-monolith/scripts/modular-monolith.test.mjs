@@ -411,11 +411,15 @@ test('docs link only to files that exist and keep the safety statements', () => 
   assert.match(existing, /only shrink/);
 });
 
-test('SKILL.md line count for the settings block matches the template', () => {
-  const n = Number(doc('SKILL.md').match(/Read only its first (\d+) lines/)[1]);
+test('SKILL.md settings-block marker matches the template', () => {
+  assert.match(doc('SKILL.md'), /Read it only through the `---- Rules below` line/);
   const lines = template.replace(/\r\n/g, '\n').split('\n');
-  assert.match(lines[n - 1], /Rules below are built from `settings`/);
+  const n = lines.findIndex((line) => line.startsWith('// ---- Rules below are built from `settings`')) + 1;
+  assert.ok(n > 0, 'template has no `---- Rules below` line');
   assert.ok(lines.slice(0, n).join('\n').includes('tsConfig:'));
-  const scenarios = readFileSync(join(skill, '..', '..', 'scripts', 'token-scenarios.json'), 'utf8');
+  // Only in this repository; an installed copy of the skill has no token benchmark.
+  const scenariosPath = join(skill, '..', '..', 'scripts', 'token-scenarios.json');
+  if (!existsSync(scenariosPath)) return;
+  const scenarios = readFileSync(scenariosPath, 'utf8');
   assert.ok(scenarios.includes(`dependency-cruiser.cjs#L1-${n}`), 'token-scenarios.json uses a different range');
 });
