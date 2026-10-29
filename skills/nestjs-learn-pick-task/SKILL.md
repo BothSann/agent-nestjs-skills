@@ -4,7 +4,7 @@ description: Scan a NestJS app or empty repo, offer learning tasks, and write th
 license: MIT
 metadata:
   author: thannsopheakboth
-  version: "1.0.4"
+  version: "1.0.5"
 ---
 
 # Pick a learning task
