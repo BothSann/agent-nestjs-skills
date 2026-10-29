@@ -38,13 +38,8 @@ Find the route in `routes`: the full path (global prefix and version included), 
 Take it from `GUIDE.md`. Give only:
 
 - The step number and title
-- **What**: the thing in one plain sentence, and its file path or command
-- **Why**: the problem it solves in this app, and what breaks without it
-- **When**: when it runs (boot, each request, on error, shutdown) and when they would write one again
-- **How**: the command, or "GUIDE.md, step N" for the code, plus one line on the new idea in it
+- What, Why, When, How (voice.md), shortened from the guide. How names the command, or "GUIDE.md, step N" for the code, plus the one new idea in it.
 - The check to run, and what they should see
-
-Take all four from the guide, shortened. Use this app's names; "best practice" or "when needed" is too vague.
 
 Do not paste the full code from the lesson worktree. The guide has the code to type. Point to it: "GUIDE.md, step 4".
 
@@ -72,7 +67,7 @@ What: `UserResponseDto` is the shape the API sends back for a user: `id`, `email
 
 Why: the `User` entity has `passwordHash`. Returning the entity would send it to the client. The DTO lists only the fields the client may see.
 
-When: it runs on every response that returns a user, when `UsersController.create()` converts the saved entity before sending it. You write one for each resource the API returns.
+When: on every response that returns a user. You write one per resource the API returns.
 
 How: type the class from GUIDE.md, step 4. New idea: `@Expose()` marks a field as allowed; `excludeExtraneousValues: true` drops every field without it.
 
