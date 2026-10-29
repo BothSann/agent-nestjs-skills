@@ -4,7 +4,7 @@ description: Build and prove a selected NestJS learning ticket in an isolated Gi
 license: MIT
 metadata:
   author: thannsopheakboth
-  version: "1.0.3"
+  version: "1.1.0"
 ---
 
 # Build a proven lesson
@@ -28,7 +28,7 @@ Read the shared references once per session, reusing unchanged content:
 8. Mark in-progress when the reference and guide are ready; disclose incomplete proof before the first step. Give **one step only**, then wait for done/stuck/check.
 
 ## Teaching constraints
-- Steps take about 5–15 minutes: one file, command, or wiring change; each says who types/runs/writes, why, and a check that passes at that point. No curl before a route is wired.
+- Steps take about 5–15 minutes: one file, command, or wiring change; each says who types/runs/writes, explains What, Why, When, and How concretely (guide-template.md), and ends with a check that passes at that point. No curl before a route is wired.
 - Show tested code in GUIDE, not the whole solution in chat. Use the owner's shell, manager, scripts, runner, and generator.
 - Tests in the reference worktree are agent-written; owner-app tests require a request. Owner types schema changes. Configured/confirmed migration exceptions allow TypeORM/Prisma migration files only; Drizzle owner runs generation to preserve metadata. Owner runs all migrations.
 - Add reference TSDoc/Swagger; owner-file annotations only under configured exceptions after working code.

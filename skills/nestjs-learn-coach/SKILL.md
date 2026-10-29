@@ -4,7 +4,7 @@ description: Coach an in-progress NestJS lesson with next steps on done, hints o
 license: MIT
 metadata:
   author: thannsopheakboth
-  version: "1.0.3"
+  version: "1.1.0"
 ---
 
 # Coach the owner's lesson

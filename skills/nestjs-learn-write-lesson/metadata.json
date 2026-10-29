@@ -1,5 +1,5 @@
 {
-  "version": "1.0.3",
+  "version": "1.1.0",
   "organization": "NestJS Learn Skills",
   "date": "October 2026",
   "abstract": "Turns a NestJS learning ticket into a lesson: the complete solution built and tested in a separate Git worktree with isolated persistence when needed, following project rules and the nestjs-best-practices skill, plus README, GUIDE, and quiz under learn/ in the main repo. Gives the owner one step at a time.",
