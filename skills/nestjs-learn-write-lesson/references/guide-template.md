@@ -34,16 +34,16 @@ Check: <command and actual expected output>
 
 ## What, Why, When, How
 
-Every step explains all four for a junior developer. Use this app's names, files, numbers, and errors. A part that could fit any app is too vague; rewrite it.
+Every step explains all four for a junior developer, with this app's names, files, numbers, and errors. A part that could fit any app is too vague; rewrite it.
 
-| Part | Answers | Concrete | Too vague |
-|---|---|---|---|
-| What | What is this thing, and where does it go? | `PrismaService` (`src/prisma/prisma.service.ts`): the one class that holds the database connection. Repositories ask Nest for it. | Create `prisma.service.ts`. |
-| Why | What problem does it solve here? What breaks without it? | Without it, each repository calls `new PrismaClient()` and opens its own pool; Postgres runs out of connections (`api-data.md` #2). | It is best practice. |
-| When | When does it run, and when would I write one again? | Once at boot: Nest calls `onModuleInit` before the app listens, and `onModuleDestroy` on shutdown. You write another only for a second database. | When needed. |
-| How | What do I type or run, and what does each new line do? | The command, the code, then: `super({ adapter })` hands the `pg` driver to Prisma; `$connect()` in `onModuleInit` makes a wrong URL fail at boot. | Code with no notes. |
+| Part | Answers | Too vague |
+|---|---|---|
+| What | What is it, and where does it go? | Create `prisma.service.ts`. |
+| Why | What problem does it solve here? What breaks without it? | It is best practice. |
+| When | When does it run? When would I write one again? | When needed. |
+| How | What do I type or run? What does each new line do? | Code with no notes. |
 
-Filled example:
+Concrete example:
 
 ```markdown
 ## Step 7: `PrismaService`

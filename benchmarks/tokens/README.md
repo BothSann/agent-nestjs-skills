@@ -84,6 +84,21 @@ node scripts/benchmark-tokens.mjs --root <baseline-checkout> --label issue-19-be
 node scripts/benchmark-tokens.mjs --compare benchmarks/tokens/scaffold-folders-before.json --label issue-19-after --output benchmarks/tokens/scaffold-folders-after.json
 ```
 
+## Step explanations: What, Why, When, How (issue #23)
+
+Baseline: `8015f5f10cec92293cd71a120d759a9912459296`, saved in `step-explanations-before.json`. `step-explanations-after.json` measures the four-part step explanations with the same tokenizer and file plans. This change adds teaching text on purpose, so the numbers are a cost, not a saving.
+
+| Metric/scenario | Before | First draft | Final | Added |
+|---|---:|---:|---:|---:|
+| write-lesson entrypoint | 822 | 838 | 838 | +16 |
+| write-lesson | 8,216 | 8,924 | 8,766 | +550 (6.7%) |
+| coach-done | 3,266 | 3,516 | 3,407 | +141 (4.3%) |
+| coach-check | 5,019 | 5,078 | 5,067 | +48 (1.0%) |
+| pick-task-configured | 3,008 | 3,067 | 3,056 | +48 (1.6%) |
+| best-practice-lookup, mm-* | unchanged | | | 0 |
+
+Most of the final cost is the filled example step in `guide-template.md` (388 → 874). The trim dropped the table's concrete column, which repeated that example, and shortened the shared `voice.md` line and the coach's step bullets; it saved 158 tokens on write-lesson and 109 on coach-done versus the first draft. Discovery descriptions are unchanged. Instruction-context counts only, not runtime usage or proof of better lessons.
+
 ## Reproduce
 
 From the repository root, after installing the development dependencies in `scripts/`:
