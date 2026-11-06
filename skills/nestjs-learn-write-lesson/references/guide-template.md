@@ -10,7 +10,7 @@ Use this outline:
 <Resolved worktree/app paths, baseline commit, copied owner changes, every changed/new file, isolated storage or not applicable, exact commands, baseline/final outcomes, fakes and unrun criteria. No credentials.>
 
 ## The big idea
-<Concrete before/after behavior and request/control flow.>
+<Everyday analogy for the main idea (voice.md), then concrete before/after behavior and request/control flow.>
 
 ## Rules this lesson follows
 | Choice | Rule | Source |
@@ -34,7 +34,7 @@ Check: <command and actual expected output>
 
 ## What, Why, When, How
 
-Every step explains all four for a junior developer, with this app's names, files, numbers, and errors. A part that could fit any app is too vague; rewrite it.
+Every step explains all four for a junior developer, with this app's names, files, numbers, and errors. A part that could fit any app is too vague; rewrite it. When a step brings a new idea, open its Why with an everyday analogy (voice.md), then tie it back to this app.
 
 | Part | Answers | Too vague |
 |---|---|---|
