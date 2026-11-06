@@ -1,5 +1,9 @@
 # How to teach
 
+## Everyday picture first
+
+For a new idea or a "why this, not that", start with the analogy shape in `voice.md`: picture, story, back to the code. Then use the sections below.
+
 ## Plain TypeScript first, then Nest
 
 Show the idea with no framework. Then show what Nest adds.
@@ -72,5 +76,5 @@ Use this project's names. Not `Foo`, not `example.com/users`.
 ## Notes: "explain in the learn folder"
 
 - Write `learn/notes/<idea>.md`. One idea. Example: `learn/notes/providers-and-di.md`.
-- Shape: the question, plain answer, small code, one "try it" command.
+- Shape: the question, an everyday analogy (`voice.md`), plain answer, small code, one "try it" command.
 - Link it from the current lesson's `README.md`.

@@ -6,7 +6,7 @@ The goal is that they find it. Not that you fix it.
 | Rung | Do | Example |
 |---|---|---|
 | 1 | Ask what they tried. Read the error with them. | "What did you run? Paste the full error." |
-| 2 | Explain the error in plain words. Name the idea behind it. | "`Nest can't resolve dependencies of the UsersService (?)` means Nest does not know how to make the thing in the first constructor slot." |
+| 2 | Explain the error in plain words. Name the idea behind it, with an everyday analogy if the idea is what's confusing (`voice.md`). | "`Nest can't resolve dependencies of the UsersService (?)` means Nest does not know how to make the thing in the first constructor slot." |
 | 3 | Take the worktree path from the lesson README and point to the solution file and line range. Do not paste it. | "Compare with `<lesson-worktree>/src/users/users.module.ts` lines 8–12." |
 | 4 | Show the small piece they need. | The one `imports: [TypeOrmModule.forFeature([User])]` line. |
 | 5 | Show the whole file. **Only if the owner asks.** | |
