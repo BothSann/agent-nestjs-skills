@@ -8,6 +8,7 @@ const settings = {
   apiMayImportDomain: false, // false: controllers call use cases, never domain code
   domainAllowedPackages: [], // npm names ('decimal.js') or Node built-ins ('crypto')
   unresolvedAllowed: ['supertest/types.js'], // exact imports tsc resolves but depcruise cannot
+  generatedDirs: [], // machine-made code inside a layer, e.g. a Prisma client; its own imports are not followed
   tsConfig: 'tsconfig.json',
 };
 // ---- Rules below are built from `settings`. Do not edit them. ----
@@ -137,7 +138,8 @@ const config = {
     },
   ],
   options: {
-    doNotFollow: { path: 'node_modules' },
+    // Generated code is still a target your imports are checked against; only its own imports are skipped.
+    doNotFollow: { path: ['node_modules', ...(settings.generatedDirs ?? []).map((d) => `^${esc(d.replace(/\/$/, ''))}/`)] },
     // `import type` counts too: a type import across a boundary is still coupling.
     tsPreCompilationDeps: true,
     tsConfig: { fileName: settings.tsConfig },

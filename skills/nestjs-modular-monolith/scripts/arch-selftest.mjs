@@ -55,6 +55,7 @@ const SRC = norm(settings.sourceRoot);
 const MODS = norm(settings.modulesDir);
 const SHARED = norm(settings.sharedDir);
 const rootFile = settings.rootFiles[0] && `${SRC}/${settings.rootFiles[0]}`;
+const GENERATED = (settings.generatedDirs ?? []).map(norm);
 
 const A = `${MODS}/alpha`;
 const B = `${MODS}/beta`;
@@ -89,6 +90,10 @@ const cases = [
   ...(settings.apiMayImportDomain ? [['api → own domain (setting on)', `${A}/api/`, target(`${A}/domain`), 'allow']] : []),
   ...(rootFile ? [['root file → module index.ts', rootFile, `${A}/index.ts`, 'allow']] : []),
   ...(settings.unresolvedAllowed ?? []).map((s) => [`listed unresolved import ${s}`, `${A}/api/`, `missing:${s}`, 'allow']),
+  ...GENERATED.flatMap((dir) => [
+    [`shared infrastructure → generated ${dir}`, `${SHARED}/infrastructure/`, `${dir}/client.ts`, 'allow'],
+    [`cycle inside generated ${dir}`, `${dir}/gen-a.ts`, `${dir}/gen-b.ts`, 'not-followed'],
+  ]),
 
   // Forbidden.
   ['domain → own application', `${A}/domain/`, target(`${A}/application`), 'domain-isolated'],
@@ -181,6 +186,7 @@ for (const mod of [A, B]) {
 }
 addImport(`${B}/index.ts`, `export * from './beta.module';`);
 addImport(`${A}/domain/cycle-b.ts`, `import * as cyc from './cycle-a';\nexport const back = cyc;`);
+for (const dir of GENERATED) addImport(`${dir}/gen-b.ts`, `import * as gen from './gen-a';\nexport const back = gen;`);
 if (rootFile) addImport(rootFile, null);
 
 for (const [path, lines] of files) {
@@ -212,7 +218,7 @@ const violations = result.summary.violations;
 
 let failed = 0;
 // A rule set to `warn` still reports, but does not fail the build.
-for (const name of new Set(plans.map((p) => p.expect).filter((e) => e !== 'allow'))) {
+for (const name of new Set(plans.map((p) => p.expect).filter((e) => e !== 'allow' && e !== 'not-followed'))) {
   const rule = config.forbidden?.find((r) => r.name === name);
   if (rule && rule.severity !== 'error') {
     failed += 1;
@@ -226,14 +232,16 @@ for (const p of plans) {
     .map((v) => v.rule.name);
   const edge = edges.get(`${p.fromFile}|${p.toPath}`);
   let problem = null;
-  if (!isOrphan && !edge) problem = 'import was not found by dependency-cruiser';
+  // A generated file's own imports are not followed, so its cycle must be neither seen nor reported.
+  if (p.expect === 'not-followed') problem = edge ? 'generated file imports were followed' : found.length ? `blocked by ${[...new Set(found)].join(', ')}` : null;
+  else if (!isOrphan && !edge) problem = 'import was not found by dependency-cruiser';
   else if (p.typeOnly && !edge.dependencyTypes.includes('type-only')) problem = 'type-only import not seen (tsPreCompilationDeps off?)';
   else if (p.expect === 'allow' && found.length) problem = `blocked by ${[...new Set(found)].join(', ')}`;
   else if (p.expect !== 'allow' && !found.includes(p.expect)) {
     problem = `expected ${p.expect}, got ${found.length ? [...new Set(found)].join(', ') : 'no violation'}`;
   }
   if (problem) failed += 1;
-  const want = p.expect === 'allow' ? 'allowed' : `blocked (${p.expect})`;
+  const want = p.expect === 'allow' ? 'allowed' : p.expect === 'not-followed' ? 'not followed' : `blocked (${p.expect})`;
   console.log(`${problem ? 'FAIL' : 'ok  '}  ${p.label}: ${want}${problem ? ` — ${problem}` : ''}`);
 }
 
