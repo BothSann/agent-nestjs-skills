@@ -379,6 +379,38 @@ test('generated modules pass the real rules; a deep import fails', needsDepcruis
   assert.match(dirty.stdout, /cross-module-via-index: src\/modules\/billing\/application\/use-product\.ts → src\/modules\/catalog\/domain\/product\.ts/);
 });
 
+test('generatedDirs skips cycles inside generated code, but not elsewhere', needsDepcruise, () => {
+  const GEN = 'src/shared/infrastructure/database/generated';
+  const config = template.replace('generatedDirs: []', `generatedDirs: ['${GEN}']`);
+  const self = selftest(config);
+  assert.equal(self.status, 0, self.stdout + self.stderr);
+  assert.match(self.stdout, /ok {4}cycle inside generated src\/shared\/infrastructure\/database\/generated: not followed/);
+  assert.match(self.stdout, /ok {4}shared infrastructure → generated .*: allowed/);
+  assert.match(self.stdout, /ok {4}circular import: blocked \(no-circular\)/);
+
+  const fakePkg = (name) => ({
+    [`node_modules/${name}/package.json`]: JSON.stringify({ name, version: '1.0.0', main: 'index.js' }),
+    [`node_modules/${name}/index.js`]: 'module.exports = {};\n',
+  });
+  const files = {
+    ...ESM_APP,
+    ...fakePkg('@nestjs/common'),
+    ...fakePkg('@nestjs/core'),
+    [`${GEN}/a.ts`]: "import { b } from './b.js';\nexport const a = () => b;\n",
+    [`${GEN}/b.ts`]: "import { a } from './a.js';\nexport const b = () => a;\n",
+    'src/shared/infrastructure/database/db.ts': "import { a } from './generated/a.js';\nexport const db = a;\n",
+  };
+  const cruise = (cfg) => {
+    const dir = project({ ...files, '.dependency-cruiser.cjs': cfg });
+    return spawnSync(process.execPath, [depcruise, 'src', '--config', '.dependency-cruiser.cjs'], { cwd: dir, encoding: 'utf8' });
+  };
+  const without = cruise(template);
+  assert.notEqual(without.status, 0);
+  assert.match(without.stdout, /no-circular/);
+  const withGen = cruise(config);
+  assert.equal(withGen.status, 0, withGen.stdout + withGen.stderr);
+});
+
 // ---------- docs keep the facts the agent needs ----------
 
 const doc = (path) => readFileSync(join(skill, path), 'utf8');

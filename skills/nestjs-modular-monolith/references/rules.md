@@ -28,6 +28,7 @@ Test files (`*.spec.*`, `*.test.*`) skip the first five rules, not the boundary 
 | `apiMayImportDomain` | `false` | This skill's convention, not a DDD law |
 | `domainAllowedPackages` | `[]` | Pure packages only (`decimal.js`, `crypto`) |
 | `unresolvedAllowed` | `['supertest/types.js']` | Exact imports TypeScript resolves but dependency-cruiser cannot (subpaths served only by `@types`); `tsc` still checks them |
+| `generatedDirs` | `[]` | Machine-made code, e.g. a Prisma 7 client at `src/shared/infrastructure/database/generated`. Its own imports (Prisma's contain cycles) are not followed; imports into it are still checked. Keep it inside a layer, or `outside-architecture` fails. Never list hand-written code. |
 | `tsConfig` | `tsconfig.json` | Must hold the project's `paths` so aliases resolve |
 
 Layer folder names are fixed; renaming them breaks the self-test on purpose.

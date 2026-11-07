@@ -24,6 +24,7 @@ const DEFAULTS = {
   apiMayImportDomain: false,
   domainAllowedPackages: [],
   unresolvedAllowed: ['supertest/types.js'],
+  generatedDirs: [],
   tsConfig: 'tsconfig.json',
 };
 const MODULE_LAYERS = ['domain', 'application', 'infrastructure', 'api', 'contracts'];
