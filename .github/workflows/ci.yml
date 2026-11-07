@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  test:
+    name: test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: scripts/package-lock.json
+
+      - name: Install script packages
+        run: npm ci
+        working-directory: scripts
+
+      # The tests skip themselves when dependency-cruiser or js-tiktoken is missing,
+      # which suits installed copies but would hide a broken install here.
+      - name: Run script tests
+        shell: bash
+        working-directory: scripts
+        run: |
+          npm test 2>&1 | tee test.log
+          grep -q "skipped 0" test.log || { echo "::error::Some tests were skipped"; exit 1; }
+
+      - name: Check token budgets
+        run: node check-tokens.mjs
+        working-directory: scripts
