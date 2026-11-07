@@ -1,0 +1,86 @@
+{
+  "encoding": "o200k_base",
+  "description": 50,
+  "rule": 2000,
+  "skills": {
+    "nestjs-best-practices": {
+      "entry": 600,
+      "scenarios": {
+        "rule-lookup": {
+          "files": [
+            "SKILL.md",
+            "rules/security-validate-all-input.md"
+          ],
+          "limit": 1600
+        }
+      }
+    },
+    "nestjs-modular-monolith": {
+      "entry": 900,
+      "scenarios": {
+        "module-code": {
+          "files": [
+            "SKILL.md",
+            "references/structure.md"
+          ],
+          "limit": 2100
+        },
+        "existing-project": {
+          "files": [
+            "SKILL.md",
+            "references/existing-project.md",
+            "references/rules.md"
+          ],
+          "limit": 2500
+        }
+      }
+    },
+    "nestjs-learn": {
+      "entry": 700,
+      "scenarios": {
+        "pick": {
+          "files": [
+            "SKILL.md",
+            "references/boundaries.md",
+            "references/pick.md"
+          ],
+          "limit": 2000
+        },
+        "write": {
+          "files": [
+            "SKILL.md",
+            "references/boundaries.md",
+            "references/write.md",
+            "references/templates.md",
+            "references/config.md"
+          ],
+          "limit": 5000
+        },
+        "done": {
+          "files": [
+            "SKILL.md",
+            "references/boundaries.md",
+            "references/done.md"
+          ],
+          "limit": 1800
+        },
+        "check": {
+          "files": [
+            "SKILL.md",
+            "references/boundaries.md",
+            "references/check.md"
+          ],
+          "limit": 3000
+        },
+        "ship": {
+          "files": [
+            "SKILL.md",
+            "references/boundaries.md",
+            "references/ship.md"
+          ],
+          "limit": 2000
+        }
+      }
+    }
+  }
+}

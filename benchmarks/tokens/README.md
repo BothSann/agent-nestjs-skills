@@ -1,5 +1,7 @@
 # Skill instruction-token benchmark
 
+> History. `scripts/benchmark-tokens.mjs` and its scenarios were removed in 2.0.0, when the three learn skills became `nestjs-learn`. Budgets now live in `benchmarks/budgets.json` and are checked by `scripts/check-tokens.mjs`. `learn-v1-before.json` is the last 1.x measurement. The commands below need a checkout from before 2.0.0.
+
 Baseline: commit `c266a3797691e255056666f71f4236548d5af1fa`. Optimized results: the accompanying working-tree skill files. This measures instruction-file context, not end-to-end model usage, billing, latency, or task quality.
 
 ## Method

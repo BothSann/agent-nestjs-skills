@@ -100,11 +100,9 @@ Opt-in. Use only for modular monoliths with real business rules. Skip for simple
 - **Keep Business Rules in a Rich Domain Model, Separate from ORM Entities** — Rules live in one place and cannot be skipped; domain tests run without a database. [`ddd-rich-domain-model.md`](skills/nestjs-best-practices/rules/ddd-rich-domain-model.md)
 - **Publish Integration Events with a Transactional Outbox** — No lost or phantom events when the app crashes between saving data and publishing. [`ddd-transactional-outbox.md`](skills/nestjs-best-practices/rules/ddd-transactional-outbox.md)
 
-## Learn skills (separate)
+## Learn skill (separate)
 
-`skills/nestjs-learn-*` are three separate skills for learning NestJS by typing your own app: `nestjs-learn-pick-task` (scan the app, offer 3 tasks), `nestjs-learn-write-lesson` (build and prove the solution in a Git worktree, write the lesson), and `nestjs-learn-coach` (done / stuck / check / ship). They are not part of this index and use the rules above only as a code-quality source.
-
-Each learn skill folder is self-contained. Six files are copied into each one's `references/`: `hard-rules.md`, `layout.md`, `project-config.md`, `code-quality.md`, `review-rules.md`, `voice.md`. Change all three copies together.
+`skills/nestjs-learn` teaches NestJS by having the owner type their own app: what next, write the lesson, done, check, and ship it. It is not part of this index; `references/check.md` maps every rule above, and a test fails if a rule is missing there. Tests: `node --test skills/nestjs-learn/scripts/learn.test.mjs`. Token budgets: `node scripts/check-tokens.mjs`.
 
 ## Modular monolith skill (separate)
 
